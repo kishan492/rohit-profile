@@ -11,7 +11,7 @@ const footerSectionSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    default: 'We create innovative digital solutions that help businesses thrive in the modern world.'
+    default: 'Building digital experiences that bridge innovation and accessibility. Let\'s create something amazing together.'
   },
   email: {
     type: String,
@@ -33,17 +33,25 @@ const footerSectionSchema = new mongoose.Schema({
     youtube: { type: String, default: '' },
     github: { type: String, default: '' }
   },
-  quickLinks: [{
-    name: { type: String, default: '' },
-    url: { type: String, default: '' }
-  }],
+  quickLinks: {
+    type: [{
+      name: { type: String, default: '' },
+      url: { type: String, default: '' }
+    }],
+    default: [
+      { name: 'Home', url: '#home' },
+      { name: 'About', url: '#about' },
+      { name: 'Services', url: '#services' },
+      { name: 'Contact', url: '#contact' }
+    ]
+  },
   services: [{
     name: { type: String, default: '' },
     url: { type: String, default: '' }
   }],
   copyright: {
     type: String,
-    default: '© 2024 Portfolio. All rights reserved.'
+    default: '© 2024 Portfolio. Made with ❤️ All rights reserved.'
   },
   isVisible: {
     type: Boolean,

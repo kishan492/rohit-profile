@@ -37,4 +37,16 @@ export const footerService = {
       body: JSON.stringify(data),
     });
   },
+
+  toggleVisibility: async (): Promise<{ message: string; footerSection: FooterData }> => {
+    return apiRequest(`${API_BASE}/api/footer/visibility`, {
+      method: 'PATCH',
+    });
+  },
+
+  resetFooter: async (): Promise<{ message: string; footerSection: FooterData }> => {
+    return apiRequest(`${API_BASE}/api/footer/reset`, {
+      method: 'POST',
+    });
+  },
 };

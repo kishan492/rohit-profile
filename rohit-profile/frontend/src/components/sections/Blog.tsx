@@ -1,9 +1,49 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Calendar, User, ArrowRight, Tag, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { blogService, BlogData } from '@/services/blogService';
+import { useNavigate } from 'react-router-dom';
 
 const Blog: React.FC = () => {
+  const [blogData, setBlogData] = useState<BlogData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    loadBlogData();
+    
+    // Listen for blog update events
+    const handleCustomUpdate = () => {
+      console.log('Blog data update event received');
+      loadBlogData();
+    };
+    
+    window.addEventListener('blogDataUpdated', handleCustomUpdate);
+    
+    // Also refresh every 30 seconds to catch updates
+    const interval = setInterval(loadBlogData, 30000);
+    
+    return () => {
+      window.removeEventListener('blogDataUpdated', handleCustomUpdate);
+      clearInterval(interval);
+    };
+  }, []);
+  
+  const loadBlogData = async () => {
+    try {
+      const data = await blogService.getBlog();
+      setBlogData(data);
+    } catch (error) {
+      console.error('Failed to load blog data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLearnMore = () => {
+    navigate('/coming-soon');
+  };
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -103,16 +143,16 @@ const Blog: React.FC = () => {
           {/* Section Header */}
           <motion.div variants={itemVariants} className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              Latest <span className="text-gradient">Articles</span>
+              {isLoading ? '' : (blogData?.sectionTitle || 'Latest Articles')}
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Insights, tutorials, and thoughts on technology, business, and digital innovation
+              {isLoading ? '' : (blogData?.sectionDescription || 'Insights, tutorials, and thoughts on technology, business, and digital innovation')}
             </p>
           </motion.div>
 
           {/* Categories Filter */}
           <motion.div variants={itemVariants} className="flex flex-wrap justify-center gap-3 mb-12">
-            {categories.map((category) => (
+            {(blogData?.categories && blogData.categories.length > 0 ? blogData.categories : categories).map((category) => (
               <Button
                 key={category}
                 variant={category === 'All' ? 'default' : 'outline'}
@@ -142,34 +182,34 @@ const Blog: React.FC = () => {
                       Featured
                     </span>
                     <span className="text-sm text-muted-foreground">
-                      {blogPosts[0].category}
+                      {(blogData?.posts && blogData.posts.length > 0 ? blogData.posts[0] : blogPosts[0]).category}
                     </span>
                   </div>
                   
                   <h3 className="text-2xl lg:text-3xl font-bold mb-4 text-foreground">
-                    {blogPosts[0].title}
+                    {(blogData?.posts && blogData.posts.length > 0 ? blogData.posts[0] : blogPosts[0]).title}
                   </h3>
                   
                   <p className="text-muted-foreground mb-6 leading-relaxed">
-                    {blogPosts[0].excerpt}
+                    {(blogData?.posts && blogData.posts.length > 0 ? blogData.posts[0] : blogPosts[0]).excerpt}
                   </p>
                   
                   <div className="flex items-center gap-6 mb-6 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4" />
-                      {blogPosts[0].author}
+                      {(blogData?.posts && blogData.posts.length > 0 ? blogData.posts[0] : blogPosts[0]).author}
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
-                      {blogPosts[0].date}
+                      {(blogData?.posts && blogData.posts.length > 0 ? blogData.posts[0] : blogPosts[0]).publishedAt}
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4" />
-                      {blogPosts[0].readTime}
+                      {(blogData?.posts && blogData.posts.length > 0 ? blogData.posts[0] : blogPosts[0]).readTime}
                     </div>
                   </div>
                   
-                  <Button className="group">
+                  <Button className="group" onClick={handleLearnMore}>
                     Read Full Article
                     <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </Button>
@@ -183,7 +223,7 @@ const Blog: React.FC = () => {
             variants={containerVariants}
             className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16"
           >
-            {blogPosts.slice(1).map((post, index) => (
+            {(blogData?.posts && blogData.posts.length > 0 ? blogData.posts.slice(1) : blogPosts.slice(1)).map((post, index) => (
               <motion.article
                 key={post.title}
                 variants={itemVariants}
@@ -231,7 +271,11 @@ const Blog: React.FC = () => {
                     <span>{post.readTime}</span>
                   </div>
                   
-                  <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
+                  <Button 
+                    variant="outline" 
+                    className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300"
+                    onClick={handleLearnMore}
+                  >
                     Read More
                   </Button>
                 </div>
@@ -246,10 +290,11 @@ const Blog: React.FC = () => {
           >
             <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-3xl p-8 border border-primary/20">
               <FileText className="h-16 w-16 text-primary mx-auto mb-4" />
-              <h3 className="text-2xl font-bold mb-4">Stay Updated</h3>
+              <h3 className="text-2xl font-bold mb-4">
+                {isLoading ? '' : (blogData?.newsletterTitle || 'Stay Updated')}
+              </h3>
               <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                Subscribe to our newsletter and get the latest articles, tutorials, and insights 
-                delivered directly to your inbox.
+                {isLoading ? '' : (blogData?.newsletterDescription || 'Subscribe to our newsletter and get the latest articles, tutorials, and insights delivered directly to your inbox.')}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
                 <input
@@ -257,8 +302,8 @@ const Blog: React.FC = () => {
                   placeholder="Enter your email"
                   className="flex-1 px-4 py-3 rounded-2xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 />
-                <Button className="px-8">
-                  Subscribe
+                <Button className="px-8" onClick={handleLearnMore}>
+                  {isLoading ? '' : (blogData?.newsletterButtonText || 'Subscribe')}
                 </Button>
               </div>
             </div>

@@ -1,22 +1,56 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Users, MapPin, Code, Linkedin, Github, Twitter } from 'lucide-react';
+import { teamService, TeamData } from '@/services/teamService';
 
 const Team: React.FC = () => {
+  const [teamData, setTeamData] = useState<TeamData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadTeamData();
+    
+    // Listen for team update events
+    const handleCustomUpdate = () => {
+      console.log('Team data update event received');
+      loadTeamData();
+    };
+    
+    window.addEventListener('teamDataUpdated', handleCustomUpdate);
+    
+    // Also refresh every 30 seconds to catch updates
+    const interval = setInterval(loadTeamData, 30000);
+    
+    return () => {
+      window.removeEventListener('teamDataUpdated', handleCustomUpdate);
+      clearInterval(interval);
+    };
+  }, []);
+  
+  const loadTeamData = async () => {
+    try {
+      const data = await teamService.getTeam();
+      setTeamData(data);
+    } catch (error) {
+      console.error('Failed to load team data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        delayChildren: 0.1,
-        staggerChildren: 0.03,
+        delayChildren: 0,
+        staggerChildren: 0.05,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1 },
+    hidden: { y: 10, opacity: 0 },
+    visible: { y: 0, opacity: 1, transition: { duration: 0.3 } },
   };
 
   const teamMembers = [
@@ -107,16 +141,16 @@ const Team: React.FC = () => {
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
+          viewport={{ once: true, amount: 0.1 }}
           className="max-w-7xl mx-auto"
         >
           {/* Section Header */}
           <motion.div variants={itemVariants} className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              Meet Our <span className="text-gradient">Team</span>
+              {isLoading ? '' : (teamData?.sectionTitle || 'Meet Our Team')}
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Talented individuals from diverse backgrounds working together to create exceptional digital experiences
+              {isLoading ? '' : (teamData?.sectionDescription || 'Talented individuals from diverse backgrounds working together to create exceptional digital experiences')}
             </p>
           </motion.div>
 
@@ -125,7 +159,7 @@ const Team: React.FC = () => {
             variants={containerVariants}
             className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
           >
-            {teamMembers.map((member, index) => (
+            {(teamData?.members && teamData.members.length > 0 ? teamData.members : teamMembers).map((member, index) => (
               <motion.div
                 key={member.name}
                 variants={itemVariants}
@@ -139,16 +173,7 @@ const Team: React.FC = () => {
                       {member.initials}
                     </span>
                   </div>
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                    className="absolute inset-0 rounded-full border-2 border-transparent bg-gradient-to-r from-primary to-accent bg-clip-border mx-auto w-24 h-24"
-                    style={{ 
-                      background: 'conic-gradient(from 0deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary)))',
-                      WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 2px), black calc(100% - 2px))',
-                      mask: 'radial-gradient(farthest-side, transparent calc(100% - 2px), black calc(100% - 2px))'
-                    }}
-                  />
+
                 </div>
 
                 {/* Info */}
@@ -217,13 +242,14 @@ const Team: React.FC = () => {
           >
             <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-3xl p-8 border border-primary/20">
               <Users className="h-16 w-16 text-primary mx-auto mb-4" />
-              <h3 className="text-2xl font-bold mb-4">Want to Join Our Team?</h3>
+              <h3 className="text-2xl font-bold mb-4">
+                {isLoading ? '' : (teamData?.ctaTitle || 'Want to Join Our Team?')}
+              </h3>
               <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                We're always looking for talented individuals who share our passion for innovation and excellence. 
-                Let's build something amazing together.
+                {isLoading ? '' : (teamData?.ctaDescription || "We're always looking for talented individuals who share our passion for innovation and excellence. Let's build something amazing together.")}
               </p>
               <button className="bg-primary text-primary-foreground px-8 py-3 rounded-2xl font-medium hover:bg-primary/90 transition-colors shadow-custom hover:shadow-custom-md">
-                View Open Positions
+                {isLoading ? '' : (teamData?.ctaButtonText || 'View Open Positions')}
               </button>
             </div>
           </motion.div>

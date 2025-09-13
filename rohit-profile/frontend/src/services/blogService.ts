@@ -5,10 +5,13 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 export interface BlogPost {
   title: string;
   excerpt: string;
-  content: string;
+  content?: string;
   featuredImage?: string;
   author: string;
   publishedAt: string;
+  readTime: string;
+  category: string;
+  thumbnail: string;
   tags: string[];
   slug: string;
 }
@@ -18,7 +21,11 @@ export interface BlogData {
   sectionTitle: string;
   sectionDescription: string;
   posts: BlogPost[];
-  isVisible: boolean;
+  categories?: string[];
+  newsletterTitle: string;
+  newsletterDescription: string;
+  newsletterButtonText: string;
+  isVisible?: boolean;
 }
 
 export const blogService = {
@@ -32,6 +39,19 @@ export const blogService = {
     return apiRequest(`${API_BASE}/api/blog`, {
       method: 'PUT',
       body: JSON.stringify(data),
+    });
+  },
+
+  toggleVisibility: async (): Promise<{ message: string; blogSection: BlogData }> => {
+    return apiRequest(`${API_BASE}/api/blog/visibility`, {
+      method: 'PATCH',
+    });
+  },
+
+  // Reset to defaults
+  resetBlog: async (): Promise<{ message: string; blogSection: BlogData }> => {
+    return apiRequest(`${API_BASE}/api/blog/reset`, {
+      method: 'POST',
     });
   },
 };

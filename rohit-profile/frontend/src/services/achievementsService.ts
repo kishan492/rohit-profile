@@ -17,7 +17,7 @@ export interface AchievementsData {
   achievements: Achievement[];
   ctaTitle: string;
   ctaDescription: string;
-  isVisible: boolean;
+  isVisible?: boolean;
 }
 
 export const achievementsService = {
@@ -37,6 +37,13 @@ export const achievementsService = {
   toggleVisibility: async (): Promise<{ message: string; achievementsSection: AchievementsData }> => {
     return apiRequest(`${API_BASE}/api/achievements/visibility`, {
       method: 'PATCH',
+    });
+  },
+
+  // Reset to defaults
+  resetAchievements: async (): Promise<{ message: string; achievementsSection: AchievementsData }> => {
+    return apiRequest(`${API_BASE}/api/achievements/reset`, {
+      method: 'POST',
     });
   },
 };

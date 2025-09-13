@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Save, Plus, Upload, X, Edit, Trash2 } from 'lucide-react';
+import { Play, Save, Plus, Upload, X, Edit, Trash2, Undo } from 'lucide-react';
 import { youtubeService, YoutubeData, Video } from '@/services/youtubeService';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,152 +9,152 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
 const VideoCard: React.FC<{ video: Video; index: number; onUpdate: (index: number, video: Video) => void; onDelete: (index: number) => void }> = ({ video, index, onUpdate, onDelete }) => {
-  const [isEditing, setIsEditing] = useState(false);
   const [editedVideo, setEditedVideo] = useState<Video>(video);
-  const [thumbnail, setThumbnail] = useState<string | null>(video.thumbnail || null);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [isUploading, setIsUploading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
-  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  React.useEffect(() => {
+    setEditedVideo(video);
+  }, [video]);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsUploading(true);
-    setUploadProgress(0);
-
-    const formData = new FormData();
-    formData.append('image', file);
-
-    try {
-      const xhr = new XMLHttpRequest();
-      
-      xhr.upload.addEventListener('progress', (event) => {
-        if (event.lengthComputable) {
-          const percentComplete = Math.round((event.loaded / event.total) * 100);
-          setUploadProgress(percentComplete);
-        }
-      });
-
-      xhr.addEventListener('load', () => {
-        if (xhr.status === 200) {
-          const result = JSON.parse(xhr.responseText);
-          setThumbnail(result.url);
-          setEditedVideo({...editedVideo, thumbnail: result.url});
-        } else {
-          alert('Failed to upload image');
-        }
-        setIsUploading(false);
-        setUploadProgress(0);
-      });
-
-      xhr.addEventListener('error', () => {
-        alert('Error uploading image');
-        setIsUploading(false);
-        setUploadProgress(0);
-      });
-
-      xhr.open('POST', `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/upload/image`);
-      xhr.setRequestHeader('Authorization', `Bearer ${localStorage.getItem('token')}`);
-      xhr.send(formData);
-    } catch (error) {
-      alert('Error uploading image');
-      setIsUploading(false);
-      setUploadProgress(0);
-    }
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      const updated = { ...editedVideo, thumbnail: dataUrl };
+      setEditedVideo(updated);
+      onUpdate(index, updated);
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
     <div className="p-4 border rounded-lg space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="font-semibold">Video {index + 1}</h4>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => setIsEditing(!isEditing)}>
-            <Edit className="h-3 w-3" />
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => onDelete(index)}>
-            <Trash2 className="h-3 w-3" />
-          </Button>
-        </div>
+        <h4 className="font-semibold">Video {index + 1}: {video.title}</h4>
+        <Button size="sm" variant="outline" onClick={() => onDelete(index)}>
+          <Trash2 className="h-3 w-3" />
+        </Button>
       </div>
 
-      {isEditing ? (
-        <div className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <Label>Video Title</Label>
-              <Input 
-                value={editedVideo.title}
-                onChange={(e) => setEditedVideo({...editedVideo, title: e.target.value})}
-                placeholder="Enter video title" 
-              />
-            </div>
-            <div>
-              <Label>Video ID</Label>
-              <Input 
-                value={editedVideo.videoId}
-                onChange={(e) => setEditedVideo({...editedVideo, videoId: e.target.value})}
-                placeholder="YouTube video ID" 
-              />
-            </div>
-          </div>
-      
-      <div>
-        <Label>Thumbnail Image</Label>
-        <div className="mt-2">
-          {thumbnail ? (
-            <div className="relative inline-block">
-              <img src={thumbnail} alt="Thumbnail" className="w-32 h-20 object-cover rounded-lg" />
-              <button
-                onClick={() => setThumbnail(null)}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ) : (
-            <label className="flex flex-col items-center justify-center w-32 h-20 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-              <Upload className="h-6 w-6 text-gray-400" />
-              <span className="text-xs text-gray-500 mt-1">Upload</span>
-              <input
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handleThumbnailUpload}
-              />
-            </label>
-          )}
-        </div>
-      </div>
-
+      <div className="space-y-4">
+        <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <Label>Description</Label>
-            <Textarea 
-              value={editedVideo.description}
-              onChange={(e) => setEditedVideo({...editedVideo, description: e.target.value})}
-              placeholder="Enter video description..."
-              rows={2}
+            <Label>Video Title</Label>
+            <Input 
+              value={editedVideo.title}
+              onChange={(e) => {
+                const updated = {...editedVideo, title: e.target.value};
+                setEditedVideo(updated);
+                onUpdate(index, updated);
+              }}
+              placeholder="Enter video title" 
             />
           </div>
-
-          <div className="flex gap-2">
-            <Button size="sm" onClick={() => {
-              onUpdate(index, editedVideo);
-              setIsEditing(false);
-            }}>Save</Button>
-            <Button size="sm" variant="outline" onClick={() => {
-              setEditedVideo(video);
-              setThumbnail(video.thumbnail || null);
-              setIsEditing(false);
-            }}>Cancel</Button>
+          <div>
+            <Label>Video ID</Label>
+            <Input 
+              value={editedVideo.videoId}
+              onChange={(e) => {
+                const updated = {...editedVideo, videoId: e.target.value};
+                setEditedVideo(updated);
+                onUpdate(index, updated);
+              }}
+              placeholder="YouTube video ID" 
+            />
           </div>
         </div>
-      ) : (
-        <div className="text-sm text-muted-foreground">
-          <p><strong>Title:</strong> {video.title || 'Not set'}</p>
-          <p><strong>Video ID:</strong> {video.videoId || 'Not set'}</p>
-          <p><strong>Views:</strong> {video.views || '0'}</p>
+        
+        <div>
+          <Label>Description</Label>
+          <Textarea 
+            value={editedVideo.description}
+            onChange={(e) => {
+              const updated = {...editedVideo, description: e.target.value};
+              setEditedVideo(updated);
+              onUpdate(index, updated);
+            }}
+            placeholder="Enter video description..."
+            rows={3}
+          />
         </div>
-      )}
+
+        <div className="grid md:grid-cols-3 gap-4">
+          <div>
+            <Label>Duration</Label>
+            <Input 
+              value={editedVideo.duration || ''}
+              onChange={(e) => {
+                const updated = {...editedVideo, duration: e.target.value};
+                setEditedVideo(updated);
+                onUpdate(index, updated);
+              }}
+              placeholder="e.g., 12:34" 
+            />
+          </div>
+          <div>
+            <Label>Views Count</Label>
+            <Input 
+              value={editedVideo.views}
+              onChange={(e) => {
+                const updated = {...editedVideo, views: e.target.value};
+                setEditedVideo(updated);
+                onUpdate(index, updated);
+              }}
+              placeholder="e.g., 1.2M" 
+            />
+          </div>
+          <div>
+            <Label>Published Date</Label>
+            <Input 
+              value={editedVideo.publishedAt}
+              onChange={(e) => {
+                const updated = {...editedVideo, publishedAt: e.target.value};
+                setEditedVideo(updated);
+                onUpdate(index, updated);
+              }}
+              placeholder="e.g., December 15, 2023" 
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label>Thumbnail Image</Label>
+          <div className="space-y-2">
+            {editedVideo.thumbnail && (
+              <img src={editedVideo.thumbnail} alt="Thumbnail" className="w-32 h-20 object-cover rounded" />
+            )}
+            <div className="flex gap-2">
+              <Input 
+                value={editedVideo.thumbnail}
+                onChange={(e) => {
+                  const updated = {...editedVideo, thumbnail: e.target.value};
+                  setEditedVideo(updated);
+                  onUpdate(index, updated);
+                }}
+                placeholder="Enter thumbnail URL or upload image" 
+              />
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  disabled={uploading}
+                />
+                <Button type="button" variant="outline" disabled={uploading}>
+                  <Upload className="h-4 w-4" />
+                  {uploading ? 'Uploading...' : 'Upload'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
@@ -163,17 +163,68 @@ const ManageYouTube: React.FC = () => {
   const [youtubeData, setYoutubeData] = useState<YoutubeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [history, setHistory] = useState<YoutubeData[]>([]);
 
   useEffect(() => {
     loadYoutubeData();
   }, []);
 
+  const defaultVideos = [
+    {
+      title: 'Building a Modern React Portfolio',
+      description: 'Learn how to create a stunning portfolio website using React and modern design principles.',
+      videoId: 'dQw4w9WgXcQ',
+      views: '45K',
+      publishedAt: 'December 15, 2023',
+      duration: '15:42',
+      thumbnail: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=225&fit=crop'
+    },
+    {
+      title: 'Real Estate Investment Strategies',
+      description: 'Essential strategies for successful real estate investing in today\'s market.',
+      videoId: 'dQw4w9WgXcQ',
+      views: '32K',
+      publishedAt: 'December 10, 2023',
+      duration: '22:18',
+      thumbnail: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=225&fit=crop'
+    },
+    {
+      title: 'Full Stack Development Guide',
+      description: 'Complete guide to becoming a full-stack developer with practical examples.',
+      videoId: 'dQw4w9WgXcQ',
+      views: '67K',
+      publishedAt: 'December 5, 2023',
+      duration: '28:55',
+      thumbnail: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=225&fit=crop'
+    }
+  ];
+
   const loadYoutubeData = async () => {
+    const savedVideos = localStorage.getItem('youtubeVideos');
+    const videos = savedVideos ? JSON.parse(savedVideos) : defaultVideos;
+    
     try {
       const data = await youtubeService.getYoutube();
-      setYoutubeData(data);
+      setYoutubeData({
+        sectionTitle: data.sectionTitle || 'YouTube Channel',
+        sectionDescription: data.sectionDescription || 'Educational content, tutorials, and insights to help you grow in technology and business',
+        channelName: data.channelName || 'My Channel',
+        channelUrl: data.channelUrl || 'https://youtube.com/@mychannel',
+        subscriberCount: data.subscriberCount || '125K+',
+        totalViews: data.totalViews || '2.5M+',
+        videos: videos
+      });
     } catch (error) {
       console.error('Failed to load youtube data:', error);
+      setYoutubeData({
+        sectionTitle: 'YouTube Channel',
+        sectionDescription: 'Educational content, tutorials, and insights to help you grow in technology and business',
+        channelName: 'My Channel',
+        channelUrl: 'https://youtube.com/@mychannel',
+        subscriberCount: '125K+',
+        totalViews: '2.5M+',
+        videos: videos
+      });
     } finally {
       setLoading(false);
     }
@@ -187,20 +238,28 @@ const ManageYouTube: React.FC = () => {
     try {
       const formData = new FormData(e.target as HTMLFormElement);
       const updatedData = {
-        sectionTitle: formData.get('sectionTitle') as string,
-        sectionDescription: formData.get('sectionDescription') as string,
-        channelName: formData.get('channelName') as string,
-        channelUrl: formData.get('channelUrl') as string,
-        subscriberCount: formData.get('subscriberCount') as string,
-        totalViews: formData.get('totalViews') as string,
+        sectionTitle: formData.get('sectionTitle') as string || youtubeData.sectionTitle,
+        sectionDescription: formData.get('sectionDescription') as string || youtubeData.sectionDescription,
+        channelName: formData.get('channelName') as string || youtubeData.channelName,
+        channelUrl: formData.get('channelUrl') as string || youtubeData.channelUrl,
+        subscriberCount: formData.get('subscriberCount') as string || youtubeData.subscriberCount,
+        totalViews: formData.get('totalViews') as string || youtubeData.totalViews,
         videos: youtubeData.videos,
       };
       
+      if (youtubeData) {
+        setHistory(prev => [youtubeData, ...prev.slice(0, 4)]);
+      }
+      
       const updated = await youtubeService.updateYoutube(updatedData);
-      setYoutubeData(updated);
-      alert('YouTube section updated successfully!');
+      setYoutubeData({
+        ...updated,
+        videos: youtubeData.videos
+      });
+      
+      window.dispatchEvent(new CustomEvent('youtubeDataUpdated'));
     } catch (error) {
-      alert('Failed to update YouTube section');
+      console.error('Save error:', error);
     } finally {
       setSaving(false);
     }
@@ -213,11 +272,15 @@ const ManageYouTube: React.FC = () => {
       description: '',
       videoId: '',
       views: '0',
-      publishedAt: ''
+      publishedAt: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+      duration: '0:00',
+      thumbnail: ''
     };
+    const updatedVideos = [...youtubeData.videos, newVideo];
+    localStorage.setItem('youtubeVideos', JSON.stringify(updatedVideos));
     setYoutubeData({
       ...youtubeData,
-      videos: [...youtubeData.videos, newVideo]
+      videos: updatedVideos
     });
   };
 
@@ -225,6 +288,7 @@ const ManageYouTube: React.FC = () => {
     if (!youtubeData) return;
     const updatedVideos = [...youtubeData.videos];
     updatedVideos[index] = video;
+    localStorage.setItem('youtubeVideos', JSON.stringify(updatedVideos));
     setYoutubeData({
       ...youtubeData,
       videos: updatedVideos
@@ -234,17 +298,40 @@ const ManageYouTube: React.FC = () => {
   const deleteVideo = (index: number) => {
     if (!youtubeData) return;
     const updatedVideos = youtubeData.videos.filter((_, i) => i !== index);
+    localStorage.setItem('youtubeVideos', JSON.stringify(updatedVideos));
     setYoutubeData({
       ...youtubeData,
       videos: updatedVideos
     });
   };
 
+  const handleRollback = async () => {
+    if (history.length === 0) return;
+    if (!confirm('Rollback to previous version?')) return;
+    
+    try {
+      const previousVersion = history[0];
+      const updated = await youtubeService.updateYoutube(previousVersion);
+      setYoutubeData({
+        ...updated,
+        videos: defaultVideos
+      });
+      setHistory(prev => prev.slice(1));
+      window.dispatchEvent(new CustomEvent('youtubeDataUpdated'));
+    } catch (error) {
+      console.error('Rollback error:', error);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 bg-gray-200 rounded animate-pulse" />
+          <div><div className="h-8 w-64 bg-gray-200 rounded animate-pulse mb-2" /><div className="h-4 w-48 bg-gray-200 rounded animate-pulse" /></div>
+        </div>
+        <Card><CardHeader><div className="h-6 w-48 bg-gray-200 rounded animate-pulse" /></CardHeader><CardContent className="space-y-6"><div className="h-10 bg-gray-200 rounded animate-pulse" /></CardContent></Card>
+      </motion.div>
     );
   }
 
@@ -277,8 +364,8 @@ const ManageYouTube: React.FC = () => {
               <Input 
                 id="sectionTitle" 
                 name="sectionTitle"
-                defaultValue={youtubeData.sectionTitle === 'Latest YouTube Videos' ? '' : youtubeData.sectionTitle}
-                placeholder="Enter section title (e.g., Latest YouTube Videos)" 
+                defaultValue={youtubeData.sectionTitle}
+                placeholder="Enter section title" 
               />
             </div>
 
@@ -287,7 +374,7 @@ const ManageYouTube: React.FC = () => {
               <Textarea 
                 id="sectionDescription" 
                 name="sectionDescription"
-                defaultValue={youtubeData.sectionDescription === 'Check out our latest content covering tech tutorials, industry insights, and behind-the-scenes content.' ? '' : youtubeData.sectionDescription}
+                defaultValue={youtubeData.sectionDescription}
                 placeholder="Enter section description..."
                 rows={3}
               />
@@ -299,7 +386,7 @@ const ManageYouTube: React.FC = () => {
                 <Input 
                   id="channelName" 
                   name="channelName"
-                  defaultValue={youtubeData.channelName === 'My Channel' ? '' : youtubeData.channelName}
+                  defaultValue={youtubeData.channelName}
                   placeholder="Enter your channel name" 
                 />
               </div>
@@ -308,7 +395,7 @@ const ManageYouTube: React.FC = () => {
                 <Input 
                   id="channelUrl" 
                   name="channelUrl"
-                  defaultValue={youtubeData.channelUrl === 'https://youtube.com/@mychannel' ? '' : youtubeData.channelUrl}
+                  defaultValue={youtubeData.channelUrl}
                   placeholder="https://youtube.com/@yourchannel" 
                 />
               </div>
@@ -320,7 +407,7 @@ const ManageYouTube: React.FC = () => {
                 <Input 
                   id="subscriberCount" 
                   name="subscriberCount"
-                  defaultValue={youtubeData.subscriberCount === '100K+' ? '' : youtubeData.subscriberCount}
+                  defaultValue={youtubeData.subscriberCount}
                   placeholder="e.g., 100K+" 
                 />
               </div>
@@ -329,34 +416,11 @@ const ManageYouTube: React.FC = () => {
                 <Input 
                   id="totalViews" 
                   name="totalViews"
-                  defaultValue={youtubeData.totalViews === '1M+' ? '' : youtubeData.totalViews}
+                  defaultValue={youtubeData.totalViews}
                   placeholder="e.g., 1M+" 
                 />
               </div>
             </div>
-
-            <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Featured Videos</CardTitle>
-            <Button type="button" size="sm" onClick={addVideo}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Video
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {youtubeData.videos.map((video, index) => (
-            <VideoCard 
-              key={index} 
-              video={video} 
-              index={index}
-              onUpdate={updateVideo}
-              onDelete={deleteVideo}
-            />
-          ))}
-        </CardContent>
-      </Card>
 
             <Card>
               <CardHeader>
@@ -381,10 +445,21 @@ const ManageYouTube: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Button type="submit" disabled={saving} className="w-full md:w-auto">
-              <Save className="mr-2 h-4 w-4" />
-              {saving ? 'Saving...' : 'Save Changes'}
-            </Button>
+            <div className="flex gap-4">
+              <Button type="submit" disabled={saving} className="flex-1 md:flex-none">
+                <Save className="mr-2 h-4 w-4" />
+                {saving ? 'Saving...' : 'Save Changes'}
+              </Button>
+              <Button 
+                type="button" 
+                variant="secondary" 
+                onClick={handleRollback}
+                disabled={history.length === 0}
+              >
+                <Undo className="mr-2 h-4 w-4" />
+                Rollback ({history.length})
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

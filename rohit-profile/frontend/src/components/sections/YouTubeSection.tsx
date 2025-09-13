@@ -1,23 +1,65 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Youtube, Play, ExternalLink, Clock, Eye, ThumbsUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { youtubeService, YoutubeData } from '@/services/youtubeService';
+import { useNavigate } from 'react-router-dom';
 
 const YouTubeSection: React.FC = () => {
+  const [youtubeData, setYoutubeData] = useState<YoutubeData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    loadYoutubeData();
+    
+    const handleCustomUpdate = () => {
+      console.log('YouTube data update event received');
+      loadYoutubeData();
+    };
+    
+    window.addEventListener('youtubeDataUpdated', handleCustomUpdate);
+    const interval = setInterval(loadYoutubeData, 30000);
+    
+    return () => {
+      window.removeEventListener('youtubeDataUpdated', handleCustomUpdate);
+      clearInterval(interval);
+    };
+  }, []);
+  
+  const loadYoutubeData = async () => {
+    try {
+      const data = await youtubeService.getYoutube();
+      setYoutubeData(data);
+    } catch (error) {
+      console.error('Failed to load youtube data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVideoClick = (videoId?: string) => {
+    if (videoId) {
+      window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
+    } else {
+      const channelUrl = import.meta.env.VITE_YOUTUBE_CHANNEL_URL || 'https://youtube.com/@mychannel';
+      window.open(channelUrl, '_blank');
+    }
+  };
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        delayChildren: 0.3,
-        staggerChildren: 0.1,
+        delayChildren: 0,
+        staggerChildren: 0.05,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1 },
+    hidden: { y: 10, opacity: 0 },
+    visible: { y: 0, opacity: 1, transition: { duration: 0.3 } },
   };
 
   const featuredVideos = [
@@ -45,8 +87,8 @@ const YouTubeSection: React.FC = () => {
   ];
 
   const stats = [
-    { label: 'Subscribers', value: '125K+', icon: Youtube },
-    { label: 'Total Views', value: '2.5M+', icon: Eye },
+    { label: 'Subscribers', value: isLoading ? '' : (youtubeData?.subscriberCount || '125K+'), icon: Youtube },
+    { label: 'Total Views', value: isLoading ? '' : (youtubeData?.totalViews || '2.5M+'), icon: Eye },
     { label: 'Videos', value: '150+', icon: Play },
     { label: 'Likes', value: '89K+', icon: ThumbsUp },
   ];
@@ -58,7 +100,7 @@ const YouTubeSection: React.FC = () => {
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
+          viewport={{ once: true, amount: 0.1 }}
           className="max-w-7xl mx-auto"
         >
           {/* Section Header */}
@@ -68,11 +110,11 @@ const YouTubeSection: React.FC = () => {
                 <Youtube className="h-7 w-7 text-white" />
               </div>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold">
-                YouTube <span className="text-gradient">Channel</span>
+                {isLoading ? '' : (youtubeData?.sectionTitle || 'YouTube Channel')}
               </h2>
             </div>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Educational content, tutorials, and insights to help you grow in technology and business
+              {isLoading ? '' : (youtubeData?.sectionDescription || 'Educational content, tutorials, and insights to help you grow in technology and business')}
             </p>
           </motion.div>
 
@@ -104,7 +146,7 @@ const YouTubeSection: React.FC = () => {
             <h3 className="text-2xl font-bold text-center mb-8">Featured Videos</h3>
             
             <div className="grid md:grid-cols-3 gap-8">
-              {featuredVideos.map((video, index) => (
+              {(youtubeData?.videos && youtubeData.videos.length > 0 ? youtubeData.videos : featuredVideos).map((video, index) => (
                 <motion.div
                   key={video.title}
                   variants={itemVariants}
@@ -121,6 +163,7 @@ const YouTubeSection: React.FC = () => {
                     <motion.div
                       whileHover={{ scale: 1.1 }}
                       className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                      onClick={() => handleVideoClick(video.videoId)}
                     >
                       <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center shadow-lg">
                         <Play className="h-8 w-8 text-white ml-1" />
@@ -130,7 +173,7 @@ const YouTubeSection: React.FC = () => {
                     {/* Duration */}
                     <div className="absolute bottom-3 right-3 bg-black/80 text-white px-2 py-1 rounded text-sm flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {video.duration}
+                      {video.duration || '10:00'}
                     </div>
                   </div>
 
@@ -147,7 +190,12 @@ const YouTubeSection: React.FC = () => {
                         <Eye className="h-4 w-4" />
                         {video.views} views
                       </div>
-                      <Button size="sm" variant="outline" className="group-hover:border-red-500 group-hover:text-red-500">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="group-hover:border-red-500 group-hover:text-red-500"
+                        onClick={() => handleVideoClick(video.videoId)}
+                      >
                         Watch
                       </Button>
                     </div>
@@ -170,11 +218,18 @@ const YouTubeSection: React.FC = () => {
                 insights, and educational content.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button className="bg-red-500 hover:bg-red-600 text-white px-8">
+                <Button 
+                  className="bg-red-500 hover:bg-red-600 text-white px-8"
+                  onClick={() => handleVideoClick()}
+                >
                   <Youtube className="mr-2 h-5 w-5" />
                   Subscribe Now
                 </Button>
-                <Button variant="outline" className="px-8">
+                <Button 
+                  variant="outline" 
+                  className="px-8"
+                  onClick={() => handleVideoClick()}
+                >
                   <ExternalLink className="mr-2 h-5 w-5" />
                   View All Videos
                 </Button>

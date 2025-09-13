@@ -9,6 +9,7 @@ export interface Video {
   thumbnail?: string;
   views: string;
   publishedAt: string;
+  duration?: string;
 }
 
 export interface YoutubeData {
@@ -40,6 +41,12 @@ export const youtubeService = {
   toggleVisibility: async (): Promise<{ message: string; youtubeSection: YoutubeData }> => {
     return apiRequest(`${API_BASE}/api/youtube/visibility`, {
       method: 'PATCH',
+    });
+  },
+
+  resetYoutube: async (): Promise<{ message: string; youtubeSection: YoutubeData }> => {
+    return apiRequest(`${API_BASE}/api/youtube/reset`, {
+      method: 'POST',
     });
   },
 };

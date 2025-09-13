@@ -5,7 +5,10 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 export interface TeamMember {
   name: string;
   role: string;
+  location: string;
   bio: string;
+  initials: string;
+  skills: string[];
   avatar?: string;
   social: {
     linkedin: string;
@@ -20,7 +23,10 @@ export interface TeamData {
   sectionTitle: string;
   sectionDescription: string;
   members: TeamMember[];
-  isVisible: boolean;
+  ctaTitle: string;
+  ctaDescription: string;
+  ctaButtonText: string;
+  isVisible?: boolean;
 }
 
 export const teamService = {
@@ -40,6 +46,13 @@ export const teamService = {
   toggleVisibility: async (): Promise<{ message: string; teamSection: TeamData }> => {
     return apiRequest(`${API_BASE}/api/team/visibility`, {
       method: 'PATCH',
+    });
+  },
+
+  // Reset to defaults
+  resetTeam: async (): Promise<{ message: string; teamSection: TeamData }> => {
+    return apiRequest(`${API_BASE}/api/team/reset`, {
+      method: 'POST',
     });
   },
 };
