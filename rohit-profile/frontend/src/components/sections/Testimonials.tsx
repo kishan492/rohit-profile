@@ -108,18 +108,18 @@ const Testimonials: React.FC = () => {
             <motion.div
               animate={{ x: [0, -approvedTestimonials.length * 400] }}
               transition={{
-                duration: 20,
+                duration: 30,
                 repeat: Infinity,
                 ease: 'linear',
                 repeatType: 'loop'
               }}
-              className="flex gap-8 items-center whitespace-nowrap"
+              className="flex gap-8 items-center whitespace-nowrap will-change-transform"
+              style={{ transform: 'translateZ(0)' }}
             >
               {[...approvedTestimonials, ...approvedTestimonials, ...approvedTestimonials].map((testimonial, index) => (
                 <motion.div
                   key={`${testimonial.id || testimonial.name}-${index}`}
-                  whileHover={{ scale: 1.02 }}
-                  className="group bg-card rounded-3xl p-8 shadow-custom hover:shadow-custom-lg transition-all duration-300 border border-border/50 hover:border-primary/20 relative flex-shrink-0 w-96"
+                  className="group bg-card rounded-3xl p-8 shadow-custom border border-border/50 relative flex-shrink-0 w-96 transform-gpu"
                 >
                   {/* Quote Icon */}
                   <div className="absolute top-6 right-6 text-primary/20">
