@@ -75,6 +75,7 @@ app.use('/api/footer', require('./routes/footer'));
 app.use('/api/branding', require('./routes/branding'));
 app.use('/api/sections', require('./routes/sections'));
 app.use('/api/testimonials', require('./routes/testimonials'));
+app.use('/api/settings', require('./routes/settings'));
 app.use('/api/upload', require('./routes/upload'));
 
 // Handle preflight requests

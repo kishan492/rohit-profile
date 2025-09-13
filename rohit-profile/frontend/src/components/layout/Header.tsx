@@ -43,17 +43,50 @@ const Header: React.FC = () => {
     navigate('/admin');
   };
 
-  const navigation = [
-    { name: 'Home', href: '#home' },
-    { name: 'About', href: '#about' },
-    { name: 'Services', href: '#services' },
-    { name: 'Achievements', href: '#achievements' },
-    { name: 'Testimonials', href: '#testimonials' },
-    { name: 'Team', href: '#team' },
-    { name: 'YouTube', href: '#youtube' },
-    { name: 'Blog', href: '#blog' },
-    { name: 'Contact', href: '#contact' },
+  const [sectionVisibility, setSectionVisibility] = useState({
+    hero: true,
+    about: true,
+    services: true,
+    testimonials: true,
+    achievements: true,
+    youtube: true,
+    team: true,
+    blog: true,
+    contact: true,
+  });
+
+  useEffect(() => {
+    const loadVisibility = () => {
+      const settings = localStorage.getItem('siteSettings');
+      if (settings) {
+        const parsed = JSON.parse(settings);
+        setSectionVisibility(parsed.sectionVisibility);
+      }
+    };
+
+    loadVisibility();
+    
+    const handleSettingsUpdate = () => {
+      loadVisibility();
+    };
+    
+    window.addEventListener('settingsUpdated', handleSettingsUpdate);
+    return () => window.removeEventListener('settingsUpdated', handleSettingsUpdate);
+  }, []);
+
+  const allNavigation = [
+    { name: 'Home', href: '#home', key: 'hero' },
+    { name: 'About', href: '#about', key: 'about' },
+    { name: 'Services', href: '#services', key: 'services' },
+    { name: 'Achievements', href: '#achievements', key: 'achievements' },
+    { name: 'Testimonials', href: '#testimonials', key: 'testimonials' },
+    { name: 'Team', href: '#team', key: 'team' },
+    { name: 'YouTube', href: '#youtube', key: 'youtube' },
+    { name: 'Blog', href: '#blog', key: 'blog' },
+    { name: 'Contact', href: '#contact', key: 'contact' },
   ];
+
+  const navigation = allNavigation.filter(item => sectionVisibility[item.key as keyof typeof sectionVisibility]);
 
   const scrollToSection = (href: string) => {
     setIsMenuOpen(false);

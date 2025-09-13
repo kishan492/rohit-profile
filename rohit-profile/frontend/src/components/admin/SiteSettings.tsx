@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Settings, Save, Eye, EyeOff, Home, User, Briefcase, MessageSquare, Trophy, Play, Users, FileText, Mail, RotateCcw } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -7,15 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { settingsService, SettingsData, SectionVisibility } from '@/services/settingsService';
 import { homeService } from '@/services/homeService';
 import { aboutService } from '@/services/aboutService';
 import { servicesService } from '@/services/servicesService';
-import { achievementsService } from '@/services/achievementsService';
-import { testimonialsService } from '@/services/testimonialsService';
-import { teamService } from '@/services/teamService';
-import { blogService } from '@/services/blogService';
-import { youtubeService } from '@/services/youtubeService';
-import { contactService } from '@/services/contactService';
 
 const SectionToggle: React.FC<{ 
   icon: React.ElementType; 
@@ -56,24 +51,157 @@ const SectionToggle: React.FC<{
 };
 
 const SiteSettings: React.FC = () => {
-  const [sectionVisibility, setSectionVisibility] = useState({
-    hero: true,
-    about: true,
-    services: true,
-    testimonials: true,
-    achievements: true,
-    youtube: true,
-    team: true,
-    blog: true,
-    contact: true,
-  });
+  const [settingsData, setSettingsData] = useState<SettingsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
 
-  const toggleSection = (section: keyof typeof sectionVisibility) => {
-    setSectionVisibility(prev => ({
-      ...prev,
-      [section]: !prev[section]
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    // Load from localStorage immediately for fast state loading
+    const savedSettings = localStorage.getItem('siteSettings');
+    const defaultSettings = {
+      sectionVisibility: {
+        hero: true,
+        about: true,
+        services: true,
+        testimonials: true,
+        achievements: true,
+        youtube: true,
+        team: true,
+        blog: true,
+        contact: true,
+      },
+      siteInfo: {
+        siteTitle: 'Portfolio',
+        siteTagline: 'Professional Portfolio Website',
+        siteDescription: 'A professional portfolio showcasing skills, services, and achievements in technology and business.',
+        siteUrl: 'https://yourportfolio.com',
+        adminEmail: 'admin@yourportfolio.com'
+      },
+      seoSettings: {
+        metaKeywords: 'portfolio, web development, design, consulting',
+        metaDescription: 'Professional portfolio website showcasing expertise in web development, design, and digital consulting services.',
+        googleAnalyticsId: '',
+        googleSearchConsole: ''
+      },
+      performanceSettings: {
+        enableAnimations: true,
+        lazyLoadImages: true,
+        enableCaching: true
+      },
+      maintenanceSettings: {
+        enableMaintenanceMode: false,
+        maintenanceMessage: "We're currently updating our website. Please check back soon!"
+      }
+    };
+    
+    const initialData = savedSettings ? JSON.parse(savedSettings) : defaultSettings;
+    setSettingsData(initialData);
+    setLoading(false);
+    
+    // Background sync with API
+    try {
+      const data = await settingsService.getSettings();
+      setSettingsData(data);
+      localStorage.setItem('siteSettings', JSON.stringify(data));
+    } catch (error) {
+      console.warn('API sync failed, using localStorage:', error);
+      if (!savedSettings) {
+        localStorage.setItem('siteSettings', JSON.stringify(defaultSettings));
+      }
+    }
+  };
+
+  const toggleSection = (section: string) => {
+    if (!settingsData) return;
+    
+    setSettingsData(prev => {
+      if (!prev) return prev;
+      const currentValue = prev.sectionVisibility[section as keyof SectionVisibility];
+      const updated = {
+        ...prev,
+        sectionVisibility: {
+          ...prev.sectionVisibility,
+          [section]: !currentValue
+        }
+      };
+      
+      // Save to localStorage immediately
+      localStorage.setItem('siteSettings', JSON.stringify(updated));
+      
+      return updated;
+    });
+  };
+
+  const updateSiteInfo = (field: string, value: string) => {
+    if (!settingsData) return;
+    setSettingsData(prev => ({
+      ...prev!,
+      siteInfo: {
+        ...prev!.siteInfo,
+        [field]: value
+      }
     }));
+  };
+
+  const updateSEOSettings = (field: string, value: string) => {
+    if (!settingsData) return;
+    setSettingsData(prev => ({
+      ...prev!,
+      seoSettings: {
+        ...prev!.seoSettings,
+        [field]: value
+      }
+    }));
+  };
+
+  const updatePerformanceSettings = (field: string, value: boolean) => {
+    if (!settingsData) return;
+    setSettingsData(prev => ({
+      ...prev!,
+      performanceSettings: {
+        ...prev!.performanceSettings,
+        [field]: value
+      }
+    }));
+  };
+
+  const updateMaintenanceSettings = (field: string, value: string | boolean) => {
+    if (!settingsData) return;
+    setSettingsData(prev => ({
+      ...prev!,
+      maintenanceSettings: {
+        ...prev!.maintenanceSettings,
+        [field]: value
+      }
+    }));
+  };
+
+  const handleSave = async () => {
+    if (!settingsData) return;
+    
+    setSaving(true);
+    try {
+      // Save to localStorage immediately
+      localStorage.setItem('siteSettings', JSON.stringify(settingsData));
+      
+      // Try to save to backend
+      try {
+        await settingsService.updateSettings(settingsData);
+      } catch (error) {
+        console.warn('Backend save failed, using localStorage:', error);
+      }
+      
+      window.dispatchEvent(new CustomEvent('settingsUpdated'));
+    } catch (error) {
+      console.error('Save error:', error);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCompleteReset = async () => {
@@ -256,6 +384,22 @@ const SiteSettings: React.FC = () => {
     },
   ];
 
+  if (loading) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 bg-gray-200 rounded animate-pulse" />
+          <div><div className="h-8 w-64 bg-gray-200 rounded animate-pulse mb-2" /><div className="h-4 w-48 bg-gray-200 rounded animate-pulse" /></div>
+        </div>
+        <Card><CardHeader><div className="h-6 w-48 bg-gray-200 rounded animate-pulse" /></CardHeader><CardContent><div className="h-20 bg-gray-200 rounded animate-pulse" /></CardContent></Card>
+      </motion.div>
+    );
+  }
+
+  if (!settingsData) {
+    return <div>Failed to load settings</div>;
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -284,7 +428,7 @@ const SiteSettings: React.FC = () => {
               icon={section.icon}
               title={section.title}
               description={section.description}
-              isVisible={sectionVisibility[section.key]}
+              isVisible={settingsData?.sectionVisibility[section.key] || false}
               onToggle={() => toggleSection(section.key)}
             />
           ))}
@@ -299,29 +443,47 @@ const SiteSettings: React.FC = () => {
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="site-title">Site Title</Label>
-              <Input id="site-title" defaultValue="Portfolio" />
+              <Input 
+                id="site-title" 
+                value={settingsData?.siteInfo.siteTitle || ''}
+                onChange={(e) => updateSiteInfo('siteTitle', e.target.value)}
+              />
             </div>
             <div>
               <Label htmlFor="site-tagline">Site Tagline</Label>
-              <Input id="site-tagline" defaultValue="Professional Portfolio Website" />
+              <Input 
+                id="site-tagline" 
+                value={settingsData?.siteInfo.siteTagline || ''}
+                onChange={(e) => updateSiteInfo('siteTagline', e.target.value)}
+              />
             </div>
           </div>
           <div>
             <Label htmlFor="site-description">Site Description</Label>
             <Textarea 
               id="site-description" 
-              defaultValue="A professional portfolio showcasing skills, services, and achievements in technology and business."
+              value={settingsData?.siteInfo.siteDescription || ''}
+              onChange={(e) => updateSiteInfo('siteDescription', e.target.value)}
               rows={3}
             />
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="site-url">Site URL</Label>
-              <Input id="site-url" defaultValue="https://yourportfolio.com" />
+              <Input 
+                id="site-url" 
+                value={settingsData?.siteInfo.siteUrl || ''}
+                onChange={(e) => updateSiteInfo('siteUrl', e.target.value)}
+              />
             </div>
             <div>
               <Label htmlFor="admin-email">Admin Email</Label>
-              <Input id="admin-email" type="email" defaultValue="admin@yourportfolio.com" />
+              <Input 
+                id="admin-email" 
+                type="email" 
+                value={settingsData?.siteInfo.adminEmail || ''}
+                onChange={(e) => updateSiteInfo('adminEmail', e.target.value)}
+              />
             </div>
           </div>
         </CardContent>
@@ -334,24 +496,39 @@ const SiteSettings: React.FC = () => {
         <CardContent className="space-y-4">
           <div>
             <Label htmlFor="meta-keywords">Meta Keywords</Label>
-            <Input id="meta-keywords" defaultValue="portfolio, web development, design, consulting" />
+            <Input 
+              id="meta-keywords" 
+              value={settingsData?.seoSettings.metaKeywords || ''}
+              onChange={(e) => updateSEOSettings('metaKeywords', e.target.value)}
+            />
           </div>
           <div>
             <Label htmlFor="meta-description">Meta Description</Label>
             <Textarea 
               id="meta-description" 
-              defaultValue="Professional portfolio website showcasing expertise in web development, design, and digital consulting services."
+              value={settingsData?.seoSettings.metaDescription || ''}
+              onChange={(e) => updateSEOSettings('metaDescription', e.target.value)}
               rows={2}
             />
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="google-analytics">Google Analytics ID</Label>
-              <Input id="google-analytics" placeholder="G-XXXXXXXXXX" />
+              <Input 
+                id="google-analytics" 
+                placeholder="G-XXXXXXXXXX" 
+                value={settingsData?.seoSettings.googleAnalyticsId || ''}
+                onChange={(e) => updateSEOSettings('googleAnalyticsId', e.target.value)}
+              />
             </div>
             <div>
               <Label htmlFor="google-search">Google Search Console</Label>
-              <Input id="google-search" placeholder="Verification code" />
+              <Input 
+                id="google-search" 
+                placeholder="Verification code" 
+                value={settingsData?.seoSettings.googleSearchConsole || ''}
+                onChange={(e) => updateSEOSettings('googleSearchConsole', e.target.value)}
+              />
             </div>
           </div>
         </CardContent>
@@ -367,21 +544,30 @@ const SiteSettings: React.FC = () => {
               <Label>Enable Animations</Label>
               <p className="text-sm text-muted-foreground">Turn off to improve performance on slower devices</p>
             </div>
-            <Switch defaultChecked />
+            <Switch 
+              checked={settingsData?.performanceSettings.enableAnimations || false}
+              onCheckedChange={(checked) => updatePerformanceSettings('enableAnimations', checked)}
+            />
           </div>
           <div className="flex items-center justify-between">
             <div>
               <Label>Lazy Load Images</Label>
               <p className="text-sm text-muted-foreground">Load images only when they come into view</p>
             </div>
-            <Switch defaultChecked />
+            <Switch 
+              checked={settingsData?.performanceSettings.lazyLoadImages || false}
+              onCheckedChange={(checked) => updatePerformanceSettings('lazyLoadImages', checked)}
+            />
           </div>
           <div className="flex items-center justify-between">
             <div>
               <Label>Enable Caching</Label>
               <p className="text-sm text-muted-foreground">Cache content for faster loading</p>
             </div>
-            <Switch defaultChecked />
+            <Switch 
+              checked={settingsData?.performanceSettings.enableCaching || false}
+              onCheckedChange={(checked) => updatePerformanceSettings('enableCaching', checked)}
+            />
           </div>
         </CardContent>
       </Card>
@@ -396,13 +582,17 @@ const SiteSettings: React.FC = () => {
               <Label>Enable Maintenance Mode</Label>
               <p className="text-sm text-muted-foreground">Show maintenance page to visitors</p>
             </div>
-            <Switch />
+            <Switch 
+              checked={settingsData?.maintenanceSettings.enableMaintenanceMode || false}
+              onCheckedChange={(checked) => updateMaintenanceSettings('enableMaintenanceMode', checked)}
+            />
           </div>
           <div>
             <Label htmlFor="maintenance-message">Maintenance Message</Label>
             <Textarea 
               id="maintenance-message" 
-              defaultValue="We're currently updating our website. Please check back soon!"
+              value={settingsData?.maintenanceSettings.maintenanceMessage || ''}
+              onChange={(e) => updateMaintenanceSettings('maintenanceMessage', e.target.value)}
               rows={2}
             />
           </div>
@@ -433,11 +623,18 @@ const SiteSettings: React.FC = () => {
       </Card>
 
       <div className="flex gap-4">
-        <Button className="flex-1 md:flex-none">
+        <Button 
+          className="flex-1 md:flex-none" 
+          onClick={handleSave}
+          disabled={saving || loading}
+        >
           <Save className="mr-2 h-4 w-4" />
-          Save Settings
+          {saving ? 'Saving...' : 'Save Settings'}
         </Button>
-        <Button variant="outline">
+        <Button 
+          variant="outline"
+          onClick={() => settingsService.resetSettings().then(() => loadSettings())}
+        >
           Reset to Defaults
         </Button>
       </div>
