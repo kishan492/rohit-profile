@@ -105,16 +105,16 @@ const Header: React.FC = () => {
       className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border"
     >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-20 relative">
-          {/* Logo - Far Left */}
+        <div className="flex items-center justify-between h-20">
+          {/* Logo - Left Side */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             onClick={handleAdminAccess}
-            className="flex items-center cursor-pointer bg-transparent border-none p-0"
+            className="flex items-center cursor-pointer bg-transparent border-none p-0 flex-shrink-0"
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center mr-3 shadow-custom">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center mr-2 sm:mr-3 shadow-custom">
               {isLoading ? (
-                <span className="text-white font-bold text-lg"></span>
+                <span className="text-white font-bold text-sm sm:text-lg"></span>
               ) : brandingData?.logoImage ? (
                 <img 
                   src={brandingData.logoImage} 
@@ -122,23 +122,23 @@ const Header: React.FC = () => {
                   className="w-full h-full object-contain rounded-xl"
                 />
               ) : (
-                <span className="text-white font-bold text-lg">
+                <span className="text-white font-bold text-sm sm:text-lg">
                   {brandingData?.logoText ? brandingData.logoText.charAt(0).toUpperCase() : 'P'}
                 </span>
               )}
             </div>
-            <h1 className="text-2xl font-bold text-gradient">
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gradient truncate max-w-[120px] sm:max-w-[200px] lg:max-w-none">
               {isLoading ? '' : (brandingData?.logoText || 'Portfolio')}
             </h1>
           </motion.button>
 
           {/* Desktop Navigation - Center */}
-          <div className="hidden md:flex items-center space-x-8 absolute left-1/2 transform -translate-x-1/2">
+          <div className="hidden lg:flex items-center space-x-6 xl:space-x-8">
             {navigation.map((item) => (
               <motion.button
                 key={item.name}
                 onClick={() => scrollToSection(item.href)}
-                className="text-muted-foreground hover:text-foreground transition-colors duration-200 relative group"
+                className="text-sm xl:text-base text-muted-foreground hover:text-foreground transition-colors duration-200 relative group whitespace-nowrap"
                 whileHover={{ y: -2 }}
               >
                 {item.name}
@@ -147,8 +147,8 @@ const Header: React.FC = () => {
             ))}
           </div>
 
-          {/* Theme Switcher & Mobile Menu - Far Right */}
-          <div className="flex items-center gap-4 ml-auto">
+          {/* Theme Switcher & Mobile Menu - Right Side */}
+          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
             <ThemeSwitcher />
             
             {/* Mobile Menu Button */}
@@ -156,7 +156,7 @@ const Header: React.FC = () => {
               variant="ghost"
               size="icon"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden"
+              className="lg:hidden"
             >
               <AnimatePresence mode="wait">
                 {isMenuOpen ? (
@@ -193,7 +193,7 @@ const Header: React.FC = () => {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="md:hidden py-4 space-y-2"
+              className="lg:hidden py-4 space-y-2"
             >
               {navigation.map((item, index) => (
                 <motion.button
@@ -202,7 +202,7 @@ const Header: React.FC = () => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
                   onClick={() => scrollToSection(item.href)}
-                  className="block w-full text-left px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors duration-200"
+                  className="block w-full text-left px-4 py-3 text-base text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors duration-200"
                 >
                   {item.name}
                 </motion.button>

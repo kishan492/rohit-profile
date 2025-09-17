@@ -10,6 +10,7 @@ import YouTubeSection from '@/components/sections/YouTubeSection';
 import Team from '@/components/sections/Team';
 import Blog from '@/components/sections/Blog';
 import Contact from '@/components/sections/Contact';
+import StarField from '@/components/ui/StarField';
 import { SectionVisibility } from '@/services/settingsService';
 
 const Index = () => {
@@ -45,20 +46,23 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main>
-        {sectionVisibility.hero && <Hero />}
-        {sectionVisibility.about && <About />}
-        {sectionVisibility.services && <Services />}
-        {sectionVisibility.achievements && <Achievements />}
-        {sectionVisibility.testimonials && <Testimonials />}
-        {sectionVisibility.team && <Team />}
-        {sectionVisibility.youtube && <YouTubeSection />}
-        {sectionVisibility.blog && <Blog />}
-        {sectionVisibility.contact && <Contact />}
-      </main>
-      <Footer />
+    <div className="min-h-screen bg-background relative">
+      <StarField />
+      <div className="relative z-20">
+        <Header />
+        <main>
+          {sectionVisibility.hero && <Hero />}
+          {sectionVisibility.about && <About />}
+          {sectionVisibility.services && <Services />}
+          {sectionVisibility.achievements && <Achievements />}
+          {sectionVisibility.testimonials && <Testimonials />}
+          {sectionVisibility.team && <Team />}
+          {sectionVisibility.youtube && <YouTubeSection />}
+          {sectionVisibility.blog && <Blog />}
+          {sectionVisibility.contact && <Contact />}
+        </main>
+        <Footer />
+      </div>
     </div>
   );
 };

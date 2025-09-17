@@ -1,14 +1,47 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Phone, MapPin, Send, MessageSquare, Clock, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { contactService, ContactData } from '@/services/contactService';
 import emailjs from '@emailjs/browser';
 
 const Contact: React.FC = () => {
+  const [contactData, setContactData] = useState<ContactData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    loadContactData();
+    
+    // Listen for contact data updates
+    const handleContactUpdate = () => {
+      loadContactData();
+    };
+    
+    window.addEventListener('contactDataUpdated', handleContactUpdate);
+    
+    // Also refresh every 30 seconds to catch updates
+    const interval = setInterval(loadContactData, 30000);
+    
+    return () => {
+      window.removeEventListener('contactDataUpdated', handleContactUpdate);
+      clearInterval(interval);
+    };
+  }, []);
+  
+  const loadContactData = async () => {
+    try {
+      const data = await contactService.getContact();
+      setContactData(data);
+    } catch (error) {
+      console.error('Failed to load contact data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,28 +85,28 @@ const Contact: React.FC = () => {
       icon: Mail,
       title: 'Email Us',
       description: 'Send us an email anytime',
-      value: 'hello@portfolio.com',
-      action: 'mailto:hello@portfolio.com',
+      value: isLoading ? '' : (contactData?.email || 'hello@portfolio.com'),
+      action: `mailto:${contactData?.email || 'hello@portfolio.com'}`,
     },
     {
       icon: Phone,
       title: 'Call Us',
       description: 'Mon-Fri from 8am to 6pm',
-      value: '+1 (555) 123-4567',
-      action: 'tel:+15551234567',
+      value: isLoading ? '' : (contactData?.phone || '+1 (555) 123-4567'),
+      action: `tel:${contactData?.phone?.replace(/[^+\d]/g, '') || '+15551234567'}`,
     },
     {
       icon: MessageSquare,
       title: 'WhatsApp',
       description: 'Chat with us directly',
-      value: '+1 (555) 123-4567',
-      action: 'https://wa.me/15551234567',
+      value: isLoading ? '' : (contactData?.whatsapp || '+1 (555) 123-4567'),
+      action: `https://wa.me/${contactData?.whatsapp?.replace(/[^\d]/g, '') || '15551234567'}`,
     },
     {
       icon: MapPin,
       title: 'Visit Us',
       description: 'Come say hello',
-      value: 'San Francisco, CA',
+      value: isLoading ? '' : (contactData?.location || 'San Francisco, CA'),
       action: '#',
     },
   ];
@@ -93,11 +126,10 @@ const Contact: React.FC = () => {
           {/* Section Header */}
           <motion.div variants={itemVariants} className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              Get In <span className="text-gradient">Touch</span>
+              {isLoading ? '' : (contactData?.sectionTitle || 'Get In Touch')}
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Ready to start your project? Have a question? We'd love to hear from you. 
-              Let's create something amazing together.
+              {isLoading ? '' : (contactData?.sectionDescription || "Ready to start your project? Have a question? We'd love to hear from you. Let's create something amazing together.")}
             </p>
           </motion.div>
 
@@ -190,15 +222,15 @@ const Contact: React.FC = () => {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Monday - Friday</span>
-                    <span className="font-medium">8:00 AM - 6:00 PM</span>
+                    <span className="font-medium">{isLoading ? '' : (contactData?.weekdays || '8:00 AM - 6:00 PM')}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Saturday</span>
-                    <span className="font-medium">9:00 AM - 4:00 PM</span>
+                    <span className="font-medium">{isLoading ? '' : (contactData?.saturday || '9:00 AM - 4:00 PM')}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Sunday</span>
-                    <span className="font-medium">Closed</span>
+                    <span className="font-medium">{isLoading ? '' : (contactData?.sunday || 'Closed')}</span>
                   </div>
                 </div>
               </div>
