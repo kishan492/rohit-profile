@@ -10,7 +10,7 @@ import YouTubeSection from '@/components/sections/YouTubeSection';
 import Team from '@/components/sections/Team';
 import Blog from '@/components/sections/Blog';
 import Contact from '@/components/sections/Contact';
-import StarField from '@/components/ui/StarField';
+
 import { SectionVisibility } from '@/services/settingsService';
 
 const Index = () => {
@@ -47,7 +47,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background relative">
-      <StarField />
       <div className="relative z-20">
         <Header />
         <main>

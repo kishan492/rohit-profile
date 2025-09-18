@@ -1,4 +1,4 @@
-import { apiRequest } from '@/config/api';
+import { apiRequest, debounce, clearCache } from '@/config/api';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -18,21 +18,34 @@ export interface ContactData {
 
 export const contactService = {
   getContact: async (): Promise<ContactData> => {
-    const response = await fetch(`${API_BASE}/api/contact`);
-    if (!response.ok) throw new Error('Failed to fetch contact data');
-    return response.json();
+    return apiRequest(`${API_BASE}/api/contact`);
   },
 
   updateContact: async (data: Partial<ContactData>): Promise<ContactData> => {
-    return apiRequest(`${API_BASE}/api/contact`, {
+    const result = await apiRequest(`${API_BASE}/api/contact`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
+    clearCache('/api/contact');
+    return result;
+  },
+
+  updateContactDebounced: (data: Partial<ContactData>, callback?: (result: ContactData) => void) => {
+    debounce('contact-update', async () => {
+      try {
+        const result = await contactService.updateContact(data);
+        callback?.(result);
+      } catch (error) {
+        console.error('Failed to update contact data:', error);
+      }
+    }, 1000);
   },
 
   toggleVisibility: async (): Promise<{ message: string; contactSection: ContactData }> => {
-    return apiRequest(`${API_BASE}/api/contact/visibility`, {
+    const result = await apiRequest(`${API_BASE}/api/contact/visibility`, {
       method: 'PATCH',
     });
+    clearCache('/api/contact');
+    return result;
   },
 };

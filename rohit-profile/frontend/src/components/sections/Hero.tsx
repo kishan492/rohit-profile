@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Play, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { homeService, HomeData } from '@/services/homeService';
+import StarField from '@/components/ui/StarField';
 
 const Hero: React.FC = () => {
   const [homeData, setHomeData] = useState<HomeData | null>(null);
@@ -13,14 +14,13 @@ const Hero: React.FC = () => {
     
     // Listen for custom home update events
     const handleCustomUpdate = () => {
-      console.log('Home data update event received');
       loadHomeData();
     };
     
     window.addEventListener('homeDataUpdated', handleCustomUpdate);
     
-    // Also refresh every 30 seconds to catch updates
-    const interval = setInterval(loadHomeData, 30000);
+    // Reduced refresh interval to 2 minutes (cached data will be used)
+    const interval = setInterval(loadHomeData, 120000);
     
     return () => {
       window.removeEventListener('homeDataUpdated', handleCustomUpdate);
@@ -57,185 +57,146 @@ const Hero: React.FC = () => {
 
   return (
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+      <StarField />
       {/* Background with gradient */}
       <div className="absolute inset-0 hero-gradient opacity-10" />
       
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            rotate: [0, 180, 360],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-          className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{
-            scale: [1.2, 1, 1.2],
-            rotate: [360, 180, 0],
-          }}
-          transition={{
-            duration: 25,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-          className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl"
-        />
-      </div>
+
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="text-center max-w-4xl mx-auto"
-        >
-          {/* Profile Image */}
+        <div className="grid lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
+          {/* Left Side - Text Content */}
           <motion.div
-            variants={itemVariants}
-            className="mb-8 inline-block"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="space-y-8"
           >
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="relative w-32 h-32 mx-auto rounded-full bg-gradient-to-br from-primary to-accent p-2 shadow-custom-lg"
+            {/* Main Heading (plain text, no animation) */}
+            <motion.h1
+              variants={itemVariants}
+              className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight"
             >
-              <div className="w-full h-full rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                {homeData?.profileImage && homeData.profileImage.trim() !== '' ? (
-                  <img 
-                    src={homeData.profileImage} 
-                    alt={homeData?.name || 'Profile'} 
-                    className="w-full h-full object-cover rounded-full"
-                    onError={(e) => {
-                      console.error('Image failed to load:', homeData.profileImage);
-                      e.currentTarget.style.display = 'none';
-                    }}
-                    onLoad={() => console.log('Image loaded successfully:', homeData.profileImage)}
-                  />
-                ) : (
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-4xl font-bold text-primary">
-                    {isLoading ? '' : (homeData?.name ? homeData.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'JD')}
+              <span className="text-gradient">
+                {isLoading
+                  ? 'Loading...'
+                  : (homeData?.headline || 'Innovating the Future One Project at a Time')}
+              </span>
+            </motion.h1>
+
+            {/* Subtitle */}
+            <motion.p
+              variants={itemVariants}
+              className="text-base sm:text-lg text-muted-foreground leading-relaxed"
+            >
+              {isLoading ? '' : (homeData?.subtitle || 'Entrepreneur, Content Creator & Developer building digital experiences that matter.')}
+            </motion.p>
+
+            {/* CTA Buttons */}
+            <motion.div
+              variants={itemVariants}
+              className="flex flex-col sm:flex-row gap-4"
+            >
+              <Button
+                variant="hero"
+                size="default"
+                className="group px-6 py-3 text-base"
+                onClick={() => document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                Work with Me
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="default"
+                className="px-6 py-3 text-base"
+                onClick={() => document.querySelector('#blog')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Explore My Work
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="default"
+                className="px-6 py-3 text-base group"
+                onClick={() => window.open(import.meta.env.VITE_YOUTUBE_URL || 'https://youtube.com', '_blank')}
+              >
+                <Play className="mr-2 h-4 w-4" />
+                Watch on YouTube
+              </Button>
+            </motion.div>
+
+            {/* Stats */}
+            <motion.div
+              variants={itemVariants}
+              className="flex flex-wrap gap-2"
+            >
+              {(isLoading ? [
+                { number: '', label: 'Projects' },
+                { number: '', label: 'Views' },
+                { number: '', label: 'Clients' },
+                { number: '', label: 'Experience' },
+              ] : [
+                { number: homeData?.stats.projects || '50+', label: 'Projects' },
+                { number: homeData?.stats.views || '100K+', label: 'Views' },
+                { number: homeData?.stats.clients || '25+', label: 'Clients' },
+                { number: homeData?.stats.experience || '5+', label: 'Experience' },
+              ]).map((stat, index) => (
+                <div
+                  key={stat.label}
+                  className="relative flex-1 min-w-[120px] p-2 rounded-lg bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-cyan-500/20 backdrop-blur-sm hover:border-purple-500/30 hover:scale-105 transition-all duration-300 group overflow-hidden"
+                >
+                  {/* Futuristic glow effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  
+                  <div className="relative z-10 text-center">
+                    <div className="text-sm font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent mb-1">
+                      {stat.number}
+                    </div>
+                    <div className="text-xs text-slate-400 uppercase tracking-wider">
+                      {stat.label}
+                    </div>
                   </div>
-                )}
-              </div>
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                className="absolute inset-0 rounded-full border-2 border-transparent bg-gradient-to-r from-primary to-accent bg-clip-border"
-                style={{ 
-                  background: 'conic-gradient(from 0deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary)))',
-                  WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 2px), black calc(100% - 2px))',
-                  mask: 'radial-gradient(farthest-side, transparent calc(100% - 2px), black calc(100% - 2px))'
-                }}
-              />
+                  
+                  {/* Corner accent */}
+                  <div className="absolute top-0 right-0 w-1 h-1 bg-gradient-to-br from-cyan-400 to-transparent rounded-bl-lg" />
+                </div>
+              ))}
             </motion.div>
           </motion.div>
 
-          {/* Main Heading */}
-          <motion.h1
-            variants={itemVariants}
-            className="text-4xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight"
-          >
-            <span className="text-gradient">
-              {isLoading ? '' : (homeData?.headline || 'Innovating the Future One Project at a Time')}
-            </span>
-          </motion.h1>
-
-          {/* Subtitle */}
-          <motion.p
-            variants={itemVariants}
-            className="text-xl sm:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed"
-          >
-            {isLoading ? '' : (homeData?.subtitle || 'Entrepreneur, Content Creator & Developer building digital experiences that matter.')}
-          </motion.p>
-
-          {/* CTA Buttons */}
+          {/* Right Side - Profile Image */}
           <motion.div
-            variants={itemVariants}
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+            initial={{ opacity: 0, y: 100 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.5 }}
+            className="flex justify-center lg:justify-end"
           >
-            <Button
-              variant="hero"
-              size="lg"
-              className="group px-8 py-4 text-lg"
-              onClick={() => document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              Work with Me
-              <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="lg"
-              className="px-8 py-4 text-lg"
-              onClick={() => document.querySelector('#blog')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              <ExternalLink className="mr-2 h-5 w-5" />
-              Explore My Work
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="lg"
-              className="px-8 py-4 text-lg group"
-              onClick={() => window.open(import.meta.env.VITE_YOUTUBE_URL || 'https://youtube.com', '_blank')}
-            >
-              <Play className="mr-2 h-5 w-5 transition-transform group-hover:scale-110" />
-              Watch on YouTube
-            </Button>
-          </motion.div>
-
-          {/* Stats */}
-          <motion.div
-            variants={itemVariants}
-            className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-2xl mx-auto"
-          >
-            {(isLoading ? [
-              { number: '', label: 'Projects Completed' },
-              { number: '', label: 'YouTube Views' },
-              { number: '', label: 'Happy Clients' },
-              { number: '', label: 'Years Experience' },
-            ] : [
-              { number: homeData?.stats.projects || '50+', label: 'Projects Completed' },
-              { number: homeData?.stats.views || '100K+', label: 'YouTube Views' },
-              { number: homeData?.stats.clients || '25+', label: 'Happy Clients' },
-              { number: homeData?.stats.experience || '5+', label: 'Years Experience' },
-            ]).map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                whileHover={{ scale: 1.05 }}
-                className="text-center p-4 rounded-2xl bg-card shadow-custom hover:shadow-custom-md transition-all duration-300"
-              >
-                <div className="text-2xl sm:text-3xl font-bold text-gradient mb-1">
-                  {stat.number}
+            <div className="w-80 h-80 lg:w-96 lg:h-96 relative overflow-hidden rounded-3xl">
+              {homeData?.profileImage && homeData.profileImage.trim() !== '' ? (
+                <img 
+                  src={homeData.profileImage} 
+                  alt={homeData?.name || 'Profile'} 
+                  className="w-full h-full object-cover fade-from-bottom"
+                  onError={(e) => {
+                    console.error('Image failed to load:', homeData.profileImage);
+                    e.currentTarget.style.display = 'none';
+                  }}
+                  onLoad={() => console.log('Image loaded successfully:', homeData.profileImage)}
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-6xl font-bold text-primary fade-from-bottom">
+                  {isLoading ? '' : (homeData?.name ? homeData.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'JD')}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {stat.label}
-                </div>
-              </motion.div>
-            ))}
+              )}
+            </div>
           </motion.div>
-        </motion.div>
+        </div>
 
         {/* Scroll Indicator */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.4 }}
-          className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
-        >
-          <motion.div
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="w-6 h-10 border-2 border-muted-foreground rounded-full flex justify-center"
-          >
-            <div className="w-1 h-3 bg-muted-foreground rounded-full mt-2" />
-          </motion.div>
-        </motion.div>
+
       </div>
     </section>
   );

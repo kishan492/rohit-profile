@@ -49,7 +49,7 @@ const StarField: React.FC = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
+    <div className="hidden lg:block absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
       <motion.div 
         style={{ y }} 
         className="absolute inset-0"
@@ -67,7 +67,6 @@ const StarField: React.FC = () => {
               stroke="hsl(var(--primary))"
               strokeWidth="0.8"
               opacity={connection.opacity}
-              filter="drop-shadow(0 0 1px hsl(var(--primary) / 0.3))"
               animate={{ pathLength: [0, 1, 1, 0] }}
               transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
             />
@@ -83,7 +82,7 @@ const StarField: React.FC = () => {
               top: `${star.y}%`,
               width: `${star.size}px`,
               height: `${star.size}px`,
-              boxShadow: `0 0 ${star.size * 4}px hsl(var(--primary) / 0.6), 0 0 ${star.size * 8}px hsl(var(--primary) / 0.3)`,
+              boxShadow: `0 0 ${star.size * 2}px hsl(var(--primary) / 0.4)`,
             }}
             animate={{
               opacity: [0, star.opacity, star.opacity, 0],

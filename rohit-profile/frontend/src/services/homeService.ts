@@ -1,4 +1,4 @@
-import { apiRequest } from '@/config/api';
+import { apiRequest, debounce, clearCache } from '@/config/api';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -8,55 +8,62 @@ export interface HomeData {
   title: string;
   headline: string;
   subtitle: string;
+  profileImage?: string;
   stats: {
     projects: string;
     views: string;
     clients: string;
     experience: string;
   };
-
   isVisible: boolean;
 }
 
 export const homeService = {
-  // Get home section data
+  // Get home section data with caching
   getHome: async (): Promise<HomeData> => {
-    const response = await fetch(`${API_BASE}/api/home`);
-    if (!response.ok) throw new Error('Failed to fetch home data');
-    return response.json();
+    return apiRequest(`${API_BASE}/api/home`);
   },
 
-  // Update home section data
+  // Update home section data with debouncing
   updateHome: async (data: Partial<HomeData>): Promise<HomeData> => {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE}/api/home`, {
+    const result = await apiRequest(`${API_BASE}/api/home`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` })
-      },
       body: JSON.stringify(data),
     });
     
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Network error' }));
-      throw new Error(error.message || `HTTP ${response.status}`);
-    }
+    // Clear cache after update
+    clearCache('/api/home');
     
-    return response.json();
+    return result;
+  },
+
+  // Debounced update for real-time editing
+  updateHomeDebounced: (data: Partial<HomeData>, callback?: (result: HomeData) => void) => {
+    debounce('home-update', async () => {
+      try {
+        const result = await homeService.updateHome(data);
+        callback?.(result);
+      } catch (error) {
+        console.error('Failed to update home data:', error);
+      }
+    }, 1000);
   },
 
   // Toggle home section visibility
   toggleVisibility: async (): Promise<{ message: string; homeSection: HomeData }> => {
-    return apiRequest(`${API_BASE}/api/home/visibility`, {
+    const result = await apiRequest(`${API_BASE}/api/home/visibility`, {
       method: 'PATCH',
     });
+    clearCache('/api/home');
+    return result;
   },
 
   // Reset to defaults
   resetHome: async (): Promise<{ message: string; homeSection: HomeData }> => {
-    return apiRequest(`${API_BASE}/api/home/reset`, {
+    const result = await apiRequest(`${API_BASE}/api/home/reset`, {
       method: 'POST',
     });
+    clearCache('/api/home');
+    return result;
   },
 };

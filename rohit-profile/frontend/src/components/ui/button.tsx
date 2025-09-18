@@ -9,15 +9,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-custom hover:shadow-custom-md",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-custom",
-        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-custom hover:shadow-custom-md",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-custom",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-custom",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-custom",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        hero: "hero-gradient text-white hover:opacity-90 shadow-custom-lg hover:shadow-custom-xl transform hover:scale-105",
-        success: "bg-success text-success-foreground hover:bg-success/90 shadow-custom",
-        warning: "bg-warning text-warning-foreground hover:bg-warning/90 shadow-custom",
+        hero: "bg-gradient-to-r from-primary to-accent text-white hover:opacity-90 shadow-custom hover:scale-105 transition-transform",
+        success: "bg-green-600 text-white hover:bg-green-700",
+        warning: "bg-orange-500 text-white hover:bg-orange-600",
       },
       size: {
         default: "h-10 px-4 py-2",

@@ -1,22 +1,31 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AdminLogin from '@/components/admin/AdminLogin';
 import { useAuth } from '@/hooks/useAuth';
-import DashboardHome from '@/components/admin/DashboardHome';
-import ManageHome from '@/components/admin/ManageHome';
-import ManageAbout from '@/components/admin/ManageAbout';
-import ManageServices from '@/components/admin/ManageServices';
-import ManageTestimonials from '@/components/admin/ManageTestimonials';
-import ManageAchievements from '@/components/admin/ManageAchievements';
-import ManageYouTube from '@/components/admin/ManageYouTube';
-import ManageTeam from '@/components/admin/ManageTeam';
-import ManageBlog from '@/components/admin/ManageBlog';
-import ManageContact from '@/components/admin/ManageContact';
-import ManageFooter from '@/components/admin/ManageFooter';
-import SiteSettings from '@/components/admin/SiteSettings';
-import ManageBranding from '@/components/admin/ManageBranding';
+
+// Lazy load admin components
+const DashboardHome = lazy(() => import('@/components/admin/DashboardHome'));
+const ManageHome = lazy(() => import('@/components/admin/ManageHome'));
+const ManageAbout = lazy(() => import('@/components/admin/ManageAbout'));
+const ManageServices = lazy(() => import('@/components/admin/ManageServices'));
+const ManageTestimonials = lazy(() => import('@/components/admin/ManageTestimonials'));
+const ManageAchievements = lazy(() => import('@/components/admin/ManageAchievements'));
+const ManageYouTube = lazy(() => import('@/components/admin/ManageYouTube'));
+const ManageTeam = lazy(() => import('@/components/admin/ManageTeam'));
+const ManageBlog = lazy(() => import('@/components/admin/ManageBlog'));
+const ManageContact = lazy(() => import('@/components/admin/ManageContact'));
+const ManageFooter = lazy(() => import('@/components/admin/ManageFooter'));
+const SiteSettings = lazy(() => import('@/components/admin/SiteSettings'));
+const ManageBranding = lazy(() => import('@/components/admin/ManageBranding'));
+
+// Loading component
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+);
 
 const AdminDashboard: React.FC = () => {
   const { isAuthenticated } = useAuth();
@@ -37,21 +46,23 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <AdminLayout>
-      <Routes>
-        <Route index element={<DashboardHome />} />
-        <Route path="home" element={<ManageHome />} />
-        <Route path="about" element={<ManageAbout />} />
-        <Route path="services" element={<ManageServices />} />
-        <Route path="testimonials" element={<ManageTestimonials />} />
-        <Route path="achievements" element={<ManageAchievements />} />
-        <Route path="youtube" element={<ManageYouTube />} />
-        <Route path="team" element={<ManageTeam />} />
-        <Route path="blog" element={<ManageBlog />} />
-        <Route path="contact" element={<ManageContact />} />
-        <Route path="footer" element={<ManageFooter />} />
-        <Route path="branding" element={<ManageBranding />} />
-        <Route path="settings" element={<SiteSettings />} />
-      </Routes>
+      <Suspense fallback={<LoadingSpinner />}>
+        <Routes>
+          <Route index element={<DashboardHome />} />
+          <Route path="home" element={<ManageHome />} />
+          <Route path="about" element={<ManageAbout />} />
+          <Route path="services" element={<ManageServices />} />
+          <Route path="testimonials" element={<ManageTestimonials />} />
+          <Route path="achievements" element={<ManageAchievements />} />
+          <Route path="youtube" element={<ManageYouTube />} />
+          <Route path="team" element={<ManageTeam />} />
+          <Route path="blog" element={<ManageBlog />} />
+          <Route path="contact" element={<ManageContact />} />
+          <Route path="footer" element={<ManageFooter />} />
+          <Route path="branding" element={<ManageBranding />} />
+          <Route path="settings" element={<SiteSettings />} />
+        </Routes>
+      </Suspense>
     </AdminLayout>
   );
 };
