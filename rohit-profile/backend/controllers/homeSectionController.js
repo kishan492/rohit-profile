@@ -25,7 +25,7 @@ const getHomeSection = async (req, res) => {
 const updateHomeSection = async (req, res) => {
   try {
     console.log('Received update request:', req.body);
-    const { name, title, headline, subtitle, profileImage, stats, isVisible } = req.body;
+  const { name, title, headline, subtitle, profileImage, isVisible } = req.body;
     
     let homeSection = await HomeSection.findOne();
     
@@ -39,7 +39,7 @@ const updateHomeSection = async (req, res) => {
     if (headline !== undefined && headline !== '') homeSection.headline = headline;
     if (subtitle !== undefined && subtitle !== '') homeSection.subtitle = subtitle;
     if (profileImage !== undefined) homeSection.profileImage = profileImage;
-    if (stats !== undefined) homeSection.stats = { ...homeSection.stats, ...stats };
+  // stats removed
     if (isVisible !== undefined) homeSection.isVisible = isVisible;
     
     await homeSection.save();

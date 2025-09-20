@@ -25,24 +25,7 @@ const homeSectionSchema = new mongoose.Schema({
     type: String,
     default: null
   },
-  stats: {
-    projects: {
-      type: String,
-      default: '50+'
-    },
-    views: {
-      type: String,
-      default: '100K+'
-    },
-    clients: {
-      type: String,
-      default: '25+'
-    },
-    experience: {
-      type: String,
-      default: '5+'
-    }
-  },
+  // stats removed
   isVisible: {
     type: Boolean,
     default: true

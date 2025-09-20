@@ -3,30 +3,49 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Play, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { homeService, HomeData } from '@/services/homeService';
+import { footerService, FooterData } from '@/services/footerService';
+import { Linkedin, Instagram, Facebook, Youtube } from 'lucide-react';
 import StarField from '@/components/ui/StarField';
 
 const Hero: React.FC = () => {
   const [homeData, setHomeData] = useState<HomeData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [footerData, setFooterData] = useState<FooterData | null>(null);
+  const [footerLoading, setFooterLoading] = useState(true);
 
   useEffect(() => {
     loadHomeData();
-    
+    loadFooterData();
     // Listen for custom home update events
     const handleCustomUpdate = () => {
       loadHomeData();
     };
-    
     window.addEventListener('homeDataUpdated', handleCustomUpdate);
-    
+    // Listen for custom footer update events
+    const handleFooterUpdate = () => {
+      loadFooterData();
+    };
+    window.addEventListener('footerDataUpdated', handleFooterUpdate);
     // Reduced refresh interval to 2 minutes (cached data will be used)
     const interval = setInterval(loadHomeData, 120000);
-    
+    const footerInterval = setInterval(loadFooterData, 30000);
     return () => {
       window.removeEventListener('homeDataUpdated', handleCustomUpdate);
+      window.removeEventListener('footerDataUpdated', handleFooterUpdate);
       clearInterval(interval);
+      clearInterval(footerInterval);
     };
   }, []);
+  const loadFooterData = async () => {
+    try {
+      const data = await footerService.getFooter();
+      setFooterData(data);
+    } catch (error) {
+      console.error('Failed to load footer data:', error);
+    } finally {
+      setFooterLoading(false);
+    }
+  };
   
   const loadHomeData = async () => {
     try {
@@ -56,7 +75,7 @@ const Hero: React.FC = () => {
   };
 
   return (
-    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+  <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 pb-12 lg:pt-48 lg:pb-24">
       <StarField />
       {/* Background with gradient */}
       <div className="absolute inset-0 hero-gradient opacity-10" />
@@ -64,6 +83,27 @@ const Hero: React.FC = () => {
 
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Mobile: Image above all text */}
+        <div className="block lg:hidden w-full flex justify-center mb-8 pt-8">
+          <div className="w-64 h-64 relative overflow-hidden rounded-3xl shadow-custom-md">
+            {homeData?.profileImage && homeData.profileImage.trim() !== '' ? (
+              <img 
+                src={homeData.profileImage} 
+                alt={homeData?.name || 'Profile'} 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.error('Image failed to load:', homeData.profileImage);
+                  e.currentTarget.style.display = 'none';
+                }}
+                onLoad={() => console.log('Image loaded successfully:', homeData.profileImage)}
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-6xl font-bold text-primary fade-from-bottom">
+                {isLoading ? '' : (homeData?.name ? homeData.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'JD')}
+              </div>
+            )}
+          </div>
+        </div>
         <div className="grid lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
           {/* Left Side - Text Content */}
           <motion.div
@@ -117,64 +157,42 @@ const Hero: React.FC = () => {
                 Explore My Work
               </Button>
               
-              <Button
-                variant="ghost"
-                size="default"
-                className="px-6 py-3 text-base group"
-                onClick={() => window.open(import.meta.env.VITE_YOUTUBE_URL || 'https://youtube.com', '_blank')}
-              >
-                <Play className="mr-2 h-4 w-4" />
-                Watch on YouTube
-              </Button>
+              
             </motion.div>
 
-            {/* Stats */}
+            {/* Social Media Links */}
             <motion.div
               variants={itemVariants}
-              className="flex flex-wrap gap-2"
+              className="flex gap-4 mt-4 justify-center lg:justify-start"
             >
-              {(isLoading ? [
-                { number: '', label: 'Projects' },
-                { number: '', label: 'Views' },
-                { number: '', label: 'Clients' },
-                { number: '', label: 'Experience' },
-              ] : [
-                { number: homeData?.stats.projects || '50+', label: 'Projects' },
-                { number: homeData?.stats.views || '100K+', label: 'Views' },
-                { number: homeData?.stats.clients || '25+', label: 'Clients' },
-                { number: homeData?.stats.experience || '5+', label: 'Experience' },
-              ]).map((stat, index) => (
-                <div
-                  key={stat.label}
-                  className="relative flex-1 min-w-[120px] p-2 rounded-lg bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-cyan-500/20 backdrop-blur-sm hover:border-purple-500/30 hover:scale-105 transition-all duration-300 group overflow-hidden"
-                >
-                  {/* Futuristic glow effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  
-                  <div className="relative z-10 text-center">
-                    <div className="text-sm font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent mb-1">
-                      {stat.number}
-                    </div>
-                    <div className="text-xs text-slate-400 uppercase tracking-wider">
-                      {stat.label}
-                    </div>
-                  </div>
-                  
-                  {/* Corner accent */}
-                  <div className="absolute top-0 right-0 w-1 h-1 bg-gradient-to-br from-cyan-400 to-transparent rounded-bl-lg" />
-                </div>
-              ))}
+              {/* Only show if footerData is loaded */}
+              {footerLoading ? null : (
+                <>
+                  <a href={footerData?.social?.linkedin || '#'} target="_blank" rel="noopener noreferrer" title="LinkedIn" className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all duration-200">
+                    <Linkedin className="h-5 w-5" />
+                  </a>
+                  <a href={footerData?.social?.instagram || '#'} target="_blank" rel="noopener noreferrer" title="Instagram" className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all duration-200">
+                    <Instagram className="h-5 w-5" />
+                  </a>
+                  <a href={footerData?.social?.facebook || '#'} target="_blank" rel="noopener noreferrer" title="Facebook" className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all duration-200">
+                    <Facebook className="h-5 w-5" />
+                  </a>
+                  <a href={footerData?.social?.youtube || '#'} target="_blank" rel="noopener noreferrer" title="YouTube" className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all duration-200">
+                    <Youtube className="h-5 w-5" />
+                  </a>
+                </>
+              )}
             </motion.div>
           </motion.div>
 
-          {/* Right Side - Profile Image */}
+          {/* Desktop: Image right side only for lg and up */}
           <motion.div
             initial={{ opacity: 0, y: 100 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.5 }}
-            className="flex justify-center lg:justify-end"
+            className="hidden lg:flex justify-center lg:justify-end"
           >
-            <div className="w-80 h-80 lg:w-96 lg:h-96 relative overflow-hidden rounded-3xl">
+            <div className="w-80 h-80 lg:w-96 lg:h-96 relative overflow-hidden rounded-3xl shadow-custom-md">
               {homeData?.profileImage && homeData.profileImage.trim() !== '' ? (
                 <img 
                   src={homeData.profileImage} 

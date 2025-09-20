@@ -27,6 +27,23 @@ const ManageBranding: React.FC = () => {
       setBrandingData(data);
       setLogoImage(data.logoImage || null);
       setFavicon(data.favicon || null);
+      // Set browser tab title instantly
+      if (data.browserTitle) {
+        document.title = data.browserTitle;
+      }
+      // Set favicon instantly
+      if (data.favicon) {
+        const link = document.querySelector("link[rel*='icon']") as HTMLLinkElement || document.createElement('link');
+        link.type = 'image/x-icon';
+        link.rel = 'shortcut icon';
+        link.href = data.favicon;
+        document.getElementsByTagName('head')[0].appendChild(link);
+      } else {
+        const link = document.querySelector("link[rel*='icon']");
+        if (link) {
+          link.parentNode?.removeChild(link);
+        }
+      }
     } catch (error) {
       console.error('Failed to load branding data:', error);
     } finally {
@@ -46,14 +63,12 @@ const ManageBranding: React.FC = () => {
 
     try {
       const xhr = new XMLHttpRequest();
-      
       xhr.upload.addEventListener('progress', (event) => {
         if (event.lengthComputable) {
           const percentComplete = Math.round((event.loaded / event.total) * 100);
           setUploadProgress(percentComplete);
         }
       });
-
       xhr.addEventListener('load', () => {
         if (xhr.status === 200) {
           const result = JSON.parse(xhr.responseText);
@@ -69,13 +84,11 @@ const ManageBranding: React.FC = () => {
         setIsUploading(false);
         setUploadProgress(0);
       });
-
       xhr.addEventListener('error', () => {
         alert('Error uploading image');
         setIsUploading(false);
         setUploadProgress(0);
       });
-
       xhr.open('POST', `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/upload/image`);
       xhr.setRequestHeader('Authorization', `Bearer ${localStorage.getItem('token')}`);
       xhr.send(formData);
@@ -96,8 +109,9 @@ const ManageBranding: React.FC = () => {
       const updatedData = {
         siteName: formData.get('siteName') as string,
         logoText: formData.get('logoText') as string,
-        logoImage: logoImage || brandingData.logoImage,
-        favicon: favicon || brandingData.favicon,
+        
+        logoImage: logoImage === null ? null : (logoImage || brandingData.logoImage),
+        favicon: favicon === null ? null : (favicon || brandingData.favicon),
         browserTitle: formData.get('browserTitle') as string,
         metaDescription: formData.get('metaDescription') as string,
       };
@@ -115,6 +129,12 @@ const ManageBranding: React.FC = () => {
         link.rel = 'shortcut icon';
         link.href = updated.favicon;
         document.getElementsByTagName('head')[0].appendChild(link);
+        } else {
+          // Remove favicon if set to null
+          const link = document.querySelector("link[rel*='icon']");
+          if (link) {
+            link.parentNode?.removeChild(link);
+          }
       }
       
       alert('Site branding updated successfully!');
@@ -212,7 +232,7 @@ const ManageBranding: React.FC = () => {
                       />
                       <button
                         type="button"
-                        onClick={() => setLogoImage('')}
+                        onClick={() => setLogoImage(null)}
                         className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                       >
                         <X className="h-3 w-3" />
@@ -260,7 +280,7 @@ const ManageBranding: React.FC = () => {
                       />
                       <button
                         type="button"
-                        onClick={() => setFavicon('')}
+                        onClick={() => setFavicon(null)}
                         className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                       >
                         <X className="h-3 w-3" />

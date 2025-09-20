@@ -15,10 +15,6 @@ const validateHomeUpdate = [
   body('title').optional().trim().isLength({ min: 2, max: 200 }),
   body('headline').optional().trim().isLength({ min: 5, max: 300 }),
   body('subtitle').optional().trim().isLength({ min: 10, max: 500 }),
-  body('stats.projects').optional().trim().isLength({ max: 20 }),
-  body('stats.views').optional().trim().isLength({ max: 20 }),
-  body('stats.clients').optional().trim().isLength({ max: 20 }),
-  body('stats.experience').optional().trim().isLength({ max: 20 }),
   body('isVisible').optional().isBoolean()
 ];
 
