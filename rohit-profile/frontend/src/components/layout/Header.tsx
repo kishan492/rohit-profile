@@ -112,9 +112,9 @@ const Header: React.FC = () => {
             onClick={handleAdminAccess}
             className="flex items-center cursor-pointer bg-transparent border-none p-0 flex-shrink-0"
           >
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center mr-2 sm:mr-3 shadow-custom">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center mr-3 sm:mr-4">
               {isLoading ? (
-                <span className="text-white font-bold text-sm sm:text-lg"></span>
+                <span className="text-white font-bold text-lg sm:text-xl"></span>
               ) : brandingData?.logoImage ? (
                 <img 
                   src={brandingData.logoImage} 
@@ -122,7 +122,7 @@ const Header: React.FC = () => {
                   className="w-full h-full object-contain rounded-xl"
                 />
               ) : (
-                <span className="text-white font-bold text-sm sm:text-lg">
+                <span className="text-white font-bold text-lg sm:text-xl">
                   {brandingData?.logoText ? brandingData.logoText.charAt(0).toUpperCase() : 'P'}
                 </span>
               )}
