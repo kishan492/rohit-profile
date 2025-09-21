@@ -35,6 +35,10 @@ const allowedOrigins = [
 // Add Vercel domains in production
 if (process.env.NODE_ENV === 'production') {
   allowedOrigins.push(/\.vercel\.app$/);
+  // Add your specific Vercel domain
+  if (process.env.FRONTEND_URL) {
+    allowedOrigins.push(process.env.FRONTEND_URL);
+  }
 }
 
 app.use(cors({

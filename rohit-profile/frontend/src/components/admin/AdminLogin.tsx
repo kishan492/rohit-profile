@@ -18,45 +18,112 @@ const AdminLogin: React.FC = () => {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   
-  try {
-    console.log('Attempting login with:', { email, password });
-    
-    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // ✅ important for CORS + cookies
-      body: JSON.stringify({ email, password }),
-    });
-    
-    console.log('Response status:', response.status);
-
-    // Safely handle non-JSON responses
-    let data: any = {};
+  // Check backend health first
+  const checkBackendHealth = async (apiUrl: string) => {
     try {
-      data = await response.json();
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const healthResponse = await fetch(`${apiUrl}/api/health`, {
+        method: 'GET',
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      return healthResponse.ok;
     } catch {
-      console.warn('No JSON response received');
+      return false;
     }
-    
-    console.log('Response data:', data);
-    
-    if (response.ok) {
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      localStorage.setItem('loginTime', Date.now().toString());
-      console.log('Login successful, reloading page...');
-      window.location.reload();
-    } else {
-      alert(data.message || `Login failed (status: ${response.status})`);
+  };
+
+  // Retry logic for cold start issues
+  const maxRetries = 3;
+  let lastError: any = null;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Login attempt ${attempt}/${maxRetries} with:`, { email, password });
+      
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      console.log('Using API URL:', apiUrl);
+      
+      // Check backend health first
+      if (attempt === 1) {
+        console.log('Checking backend health...');
+        const isHealthy = await checkBackendHealth(apiUrl);
+        if (!isHealthy) {
+          console.log('Backend not ready, will retry...');
+          lastError = new Error('Backend not ready');
+          if (attempt < maxRetries) {
+            const delay = Math.pow(2, attempt) * 1000;
+            console.log(`Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+        }
+        console.log('Backend is healthy, proceeding with login...');
+      }
+      
+      const response = await fetch(`${apiUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      });
+      
+      console.log('Response status:', response.status);
+
+      // Safely handle non-JSON responses
+      let data: any = {};
+      try {
+        data = await response.json();
+      } catch {
+        console.warn('No JSON response received');
+      }
+      
+      console.log('Response data:', data);
+      
+      if (response.ok) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('loginTime', Date.now().toString());
+        console.log('Login successful, reloading page...');
+        window.location.reload();
+        return; // Success, exit retry loop
+      } else {
+        // Don't retry on authentication errors (400, 401)
+        if (response.status === 400 || response.status === 401) {
+          alert(data.message || `Login failed (status: ${response.status})`);
+          return;
+        }
+        // Handle 404 specifically (might be cold start issue)
+        if (response.status === 404) {
+          lastError = new Error(`Endpoint not found (404) - possible cold start issue`);
+          console.log('404 error - likely cold start, will retry...');
+        } else {
+          // Retry on other server errors (500, 502, 503, 504)
+          lastError = new Error(`Server error: ${response.status}`);
+        }
+      }
+    } catch (error: any) {
+      console.error(`Login attempt ${attempt} error:`, error);
+      lastError = error;
+      
+      // Wait before retry (exponential backoff)
+      if (attempt < maxRetries) {
+        const delay = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+        console.log(`Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
     }
-  } catch (error: any) {
-    console.error('Login error:', error);
-    alert(`Network error: Could not connect to backend. Check CORS or server status.`);
-  } finally {
-    setIsLoading(false);
   }
+  
+  // All retries failed
+  console.error('All login attempts failed:', lastError);
+  alert(`Network error: Could not connect to backend after ${maxRetries} attempts. Please try again.`);
+  setIsLoading(false);
 };
 
 
