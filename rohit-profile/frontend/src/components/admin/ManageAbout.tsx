@@ -253,7 +253,19 @@ const ManageAbout: React.FC = () => {
                   />
                   <button
                     type="button"
-                    onClick={() => setAboutImage('')}
+                    onClick={() => {
+                      setAboutImage('');
+                      // Also update the database to remove image
+                      aboutService.updateAbout({ aboutImage: '' })
+                        .then(() => {
+                          // Trigger storage event to refresh public site
+                          window.dispatchEvent(new StorageEvent('storage', {
+                            key: 'aboutDataUpdated',
+                            newValue: Date.now().toString()
+                          }));
+                        })
+                        .catch(err => console.error('Failed to remove image:', err));
+                    }}
                     className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                   >
                     <X className="h-3 w-3" />

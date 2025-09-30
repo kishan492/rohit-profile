@@ -130,6 +130,14 @@ export default {
           "0%, 100%": { boxShadow: "0 0 20px hsl(var(--primary) / 0.5)" },
           "50%": { boxShadow: "0 0 40px hsl(var(--primary) / 0.8)" },
         },
+        "gradient-x": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
+        "cursor-blink": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -142,6 +150,11 @@ export default {
         "slide-out-right": "slide-out-right 0.3s ease-out",
         "float": "float 3s ease-in-out infinite",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "gradient": "gradient-x 3s ease-in-out infinite",
+        "cursor": "cursor-blink 1s ease-in-out infinite",
+      },
+      backgroundSize: {
+        "200%": "200% 200%",
       },
       boxShadow: {
         'custom': 'var(--shadow)',

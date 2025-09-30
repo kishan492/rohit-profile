@@ -112,7 +112,7 @@ const Header: React.FC = () => {
             onClick={handleAdminAccess}
             className="flex items-center cursor-pointer bg-transparent border-none p-0 flex-shrink-0"
           >
-            <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center mr-3 sm:mr-4">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center mr-1 sm:mr-2">
               {isLoading ? (
                 <span className="text-white font-bold text-lg sm:text-xl"></span>
               ) : brandingData?.logoImage ? (
@@ -193,7 +193,7 @@ const Header: React.FC = () => {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="lg:hidden py-4 space-y-2"
+              className="lg:hidden py-4 space-y-4"
             >
               {navigation.map((item, index) => (
                 <motion.button
@@ -202,7 +202,7 @@ const Header: React.FC = () => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
                   onClick={() => scrollToSection(item.href)}
-                  className="block w-full text-left px-4 py-3 text-base text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors duration-200"
+                  className="block w-full text-left px-4 py-3 text-base text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors duration-200 mb-1"
                 >
                   {item.name}
                 </motion.button>
