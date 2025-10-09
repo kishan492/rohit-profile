@@ -10,6 +10,7 @@ const Testimonials: React.FC = () => {
     rating: 0,
     content: ''
   });
+  const [lastUpdate, setLastUpdate] = useState(Date.now());
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -58,26 +59,69 @@ const Testimonials: React.FC = () => {
   ]);
 
   useEffect(() => {
-    const handleTestimonialsUpdate = () => {
-      const adminData = localStorage.getItem('adminTestimonials');
-      if (adminData) {
-        const parsed = JSON.parse(adminData);
-        const approved = parsed.filter((t: any) => t.status === 'approved');
-        setTestimonials(approved.length > 0 ? approved : testimonials);
+    const loadTestimonials = async (forceRefresh = false) => {
+      // Skip backend API call for now, use localStorage only
+      try {
+        // Fallback to localStorage
+        const adminData = localStorage.getItem('adminTestimonials');
+        if (adminData) {
+          const parsed = JSON.parse(adminData);
+          const approved = parsed.filter((t: any) => t.status === 'approved');
+          
+          // Check if data actually changed
+          const currentData = JSON.stringify(approved);
+          const cachedData = localStorage.getItem('testimonialsCache');
+          
+          if (currentData !== cachedData || forceRefresh || approved.length > 0) {
+            setTestimonials(approved.length > 0 ? approved : testimonials);
+            localStorage.setItem('testimonialsCache', currentData);
+            setLastUpdate(Date.now());
+          }
+        }
+      } catch (error) {
+        console.error('Error loading testimonials:', error);
       }
+
     };
 
-    // Initial check for testimonials in localStorage
-    handleTestimonialsUpdate();
+    const handleTestimonialsUpdate = (forceRefresh = true) => {
+      loadTestimonials(forceRefresh);
+    };
 
-    // Set up polling for mobile devices to check for updates
-    const checkInterval = setInterval(handleTestimonialsUpdate, 3000);
+    // Initial load
+    loadTestimonials();
+
+    // Set up polling for real-time updates (reduced frequency)
+    const checkInterval = setInterval(loadTestimonials, 5000);
     
-    // Also keep the event listener for desktop
+    // Event listener for manual updates
     window.addEventListener('testimonialsDataUpdated', handleTestimonialsUpdate);
+    
+    // Storage event listener for cross-tab sync
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'adminTestimonials') {
+        handleTestimonialsUpdate();
+      }
+    });
+    
+    // Visibility change handler for mobile/desktop sync
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Page became visible, refresh data with force
+        setTimeout(() => handleTestimonialsUpdate(true), 100);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Focus handler for when user switches back to tab/app
+    window.addEventListener('focus', handleTestimonialsUpdate);
     
     return () => {
       window.removeEventListener('testimonialsDataUpdated', handleTestimonialsUpdate);
+      window.removeEventListener('storage', handleTestimonialsUpdate);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleTestimonialsUpdate);
       clearInterval(checkInterval);
     };
   }, []);
@@ -119,7 +163,7 @@ const Testimonials: React.FC = () => {
             >
               {[...approvedTestimonials, ...approvedTestimonials, ...approvedTestimonials].map((testimonial, index) => (
                 <motion.div
-                  key={`${testimonial.id || testimonial.name}-${index}`}
+                  key={`${testimonial.id || testimonial.name}-${index}-${lastUpdate}`}
                   className="group bg-card rounded-3xl p-8 shadow-custom border border-border/50 relative flex-shrink-0 w-96 transform-gpu"
                 >
                   {/* Quote Icon */}
@@ -206,6 +250,16 @@ const Testimonials: React.FC = () => {
                   const existing = JSON.parse(localStorage.getItem('adminTestimonials') || '[]');
                   const updated = [...existing, newReview];
                   localStorage.setItem('adminTestimonials', JSON.stringify(updated));
+                  
+                  // Trigger update event for cross-component sync
+                  window.dispatchEvent(new CustomEvent('testimonialsDataUpdated'));
+                  
+                  // Also trigger storage event for cross-tab sync
+                  window.dispatchEvent(new StorageEvent('storage', {
+                    key: 'adminTestimonials',
+                    newValue: JSON.stringify(updated),
+                    storageArea: localStorage
+                  }));
                   
                   setFormData({ name: '', role: '', rating: 0, content: '' });
                   alert('Thank you! Your review has been submitted for approval.');

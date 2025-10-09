@@ -81,6 +81,7 @@ app.use('/api/sections', require('./routes/sections'));
 app.use('/api/testimonials', require('./routes/testimonials'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/upload', require('./routes/upload'));
+app.use('/api/chatbot', require('./routes/chatbot'));
 
 // Handle preflight requests
 app.options('*', cors());
