@@ -131,8 +131,9 @@ export default {
           "50%": { boxShadow: "0 0 40px hsl(var(--primary) / 0.8)" },
         },
         "gradient-x": {
-          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "0%": { backgroundPosition: "0% 50%" },
           "50%": { backgroundPosition: "100% 50%" },
+          "100%": { backgroundPosition: "0% 50%" }
         },
         "cursor-blink": {
           "0%, 100%": { opacity: "1" },
@@ -164,5 +165,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate") as any],
 } satisfies Config;

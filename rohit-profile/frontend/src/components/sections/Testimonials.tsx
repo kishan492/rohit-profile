@@ -58,16 +58,6 @@ const Testimonials: React.FC = () => {
   ]);
 
   useEffect(() => {
-    // Load initial data from localStorage
-    const adminData = localStorage.getItem('adminTestimonials');
-    if (adminData) {
-      const parsed = JSON.parse(adminData);
-      const approved = parsed.filter((t: any) => t.status === 'approved');
-      if (approved.length > 0) {
-        setTestimonials(approved);
-      }
-    }
-
     const handleTestimonialsUpdate = () => {
       const adminData = localStorage.getItem('adminTestimonials');
       if (adminData) {
@@ -77,8 +67,19 @@ const Testimonials: React.FC = () => {
       }
     };
 
+    // Initial check for testimonials in localStorage
+    handleTestimonialsUpdate();
+
+    // Set up polling for mobile devices to check for updates
+    const checkInterval = setInterval(handleTestimonialsUpdate, 3000);
+    
+    // Also keep the event listener for desktop
     window.addEventListener('testimonialsDataUpdated', handleTestimonialsUpdate);
-    return () => window.removeEventListener('testimonialsDataUpdated', handleTestimonialsUpdate);
+    
+    return () => {
+      window.removeEventListener('testimonialsDataUpdated', handleTestimonialsUpdate);
+      clearInterval(checkInterval);
+    };
   }, []);
 
   const approvedTestimonials = testimonials.filter(t => t.status === 'approved');
